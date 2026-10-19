@@ -1,0 +1,8 @@
+{
+  "mooboard": 1,
+  "id": "clock",
+  "name": "Clock",
+  "author": "mooboard",
+  "refresh": 3600,
+  "duration": 10
+}

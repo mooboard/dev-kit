@@ -1,0 +1,20 @@
+{
+  "mooboard": 1,
+  "id": "sign",
+  "name": "Sign",
+  "author": "mooboard",
+  "refresh": 3600,
+  "duration": 10,
+  "settings": [
+    {"key": "words", "type": "text", "label": "Words", "default": "Moo", "max": 12},
+    {"key": "color", "type": "color", "label": "Color", "default": "#ffb7c9"},
+    {"key": "cow", "type": "toggle", "label": "Cow", "default": true},
+    {"key": "size", "type": "choice", "label": "Size", "default": "Large",
+     "options": ["Small", "Large"]}
+  ],
+  "layers": [
+    {"type": "image", "src": "images/cow.png", "x": 4, "y": 4, "show": "cow"},
+    {"type": "text", "text": "{words}", "x": 44, "size": 13, "color": "{color}", "show": "size=Large"},
+    {"type": "text", "text": "{words}", "x": 44, "size": 9, "color": "{color}", "show": "size=Small"}
+  ]
+}

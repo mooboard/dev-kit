@@ -1,0 +1,8 @@
+{
+  "mooboard": 1,
+  "id": "ticker",
+  "name": "Ticker",
+  "author": "mooboard",
+  "refresh": 3600,
+  "duration": 10
+}

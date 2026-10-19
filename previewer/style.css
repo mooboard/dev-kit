@@ -1,0 +1,77 @@
+/* one dark page with the board in the middle */
+:root {
+  color-scheme: dark;
+  --ground: #0e1a22;
+  --type: #e9fbf7;
+  --dim: #9fbfbb;
+  --lit: #77edd7;
+  --warn: #ffb81c;
+  --rule: #25404d;
+  --frame: #17191c;
+  --ring: rgba(255, 46, 136, 0.6);
+  --led: 4px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--type);
+  font: 16px/1.4 ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  display: grid;
+  gap: 20px;
+}
+
+h1 { margin: 0; font-size: 22px; font-weight: 700; }
+
+.drop {
+  position: relative;
+  display: block;
+  padding: 18px 16px;
+  border: 2px dashed var(--rule);
+  border-radius: 14px;
+  color: var(--dim);
+  text-align: center;
+  cursor: pointer;
+}
+.drop:hover, .drop.is-over { border-color: var(--lit); color: var(--type); }
+.drop:focus-within { outline: 2px solid var(--lit); outline-offset: 2px; }
+.drop input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+.stage { display: flex; justify-content: center; min-width: 0; }
+
+.board {
+  position: relative;
+  flex: none;
+  margin: 10px;
+  background: #000;
+  border-radius: 4px;
+  box-shadow: 0 0 0 10px var(--frame), 0 24px 60px -24px #000;
+}
+.board canvas { display: block; width: 100%; height: 100%; }
+.leds { image-rendering: pixelated; }
+.glow {
+  position: absolute;
+  inset: 0;
+  filter: blur(calc(var(--led) * 0.9));
+  opacity: 0.6;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.ring { position: absolute; inset: 0; border: var(--led) solid var(--ring); pointer-events: none; }
+
+.toggles { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 24px; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 0; border: 0; }
+.toggle legend { float: left; padding: 0; margin-right: 4px; }
+.toggle label, label.toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; }
+input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; margin: 0; accent-color: var(--lit); }
+
+.warnings { list-style: none; margin: 0; padding: 0; display: grid; justify-items: center; gap: 6px; color: var(--warn); }
