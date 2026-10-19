@@ -1,9 +1,1 @@
-.toggle select {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 2px solid var(--rule);
-  border-radius: 12px;
-  background: var(--ground);
-  color: var(--type);
-  font: inherit;
-}
+.toggle select { max-width: calc(100vw - 32px); }

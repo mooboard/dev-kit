@@ -60,7 +60,7 @@
     id: 'id must be 3 to 32 lowercase letters, digits or dashes',
     name: 'name must be 1 to 24 characters',
     nameLink: 'name can’t be a link',
-    author: 'author must be a GitHub user name',
+    author: 'author must be a GitHub username',
     refresh: 'refresh must be 300 to 86400 seconds',
     duration: 'duration must be 5 to 60 seconds',
     settings: 'settings must be a list of up to 8',

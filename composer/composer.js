@@ -10,7 +10,10 @@
           copyFrame, deleteFrame, exportNames, exportZip, findElement, frameView, H, History, hitTest, inflate,
           insertElement, keyStep, kitFor, ledAt, makeElement, manifestOf, movedBy, moveElement, moveFrame, newApp,
           paint, picturesOf, placeText, readApp, relabel, removeSetting, resized, settingOf, settingValues,
-          SHORTEST_MS, slug, timeOf, unzip, usedFonts, W, WORDS, wordsOf } = model;
+          SHORTEST_MS, slug, timeOf, unzip, usedFonts, W, WORDS, wordsOf, GitHubUsers, authorMissing } = model;
+
+  // how long the author box waits after the last key before it asks github
+  const AUTHOR_WAIT_MS = 800;
 
   // ---- the page ----
 
@@ -255,7 +258,8 @@
       checked = check(app, store, kit, now());
       byId('app-line').textContent = checked.app || '';
       byId('settings-line').textContent = checked.settings || '';
-      packageButton.disabled = !checked.ok;
+      if (authorSettled) settleAuthor();
+      else showAuthor();
       showWarnings();
       return checked;
     }
@@ -580,9 +584,67 @@
       app.name = input.value;
     });
     live(appInputs.id, (input) => { app.id = input.value; });
-    live(appInputs.author, (input) => { app.author = input.value; });
+    live(appInputs.author, (input) => { app.author = input.value.trim(); });
     live(appInputs.refresh, (input) => { app.refresh = wholeOr(input.value); });
     live(appInputs.duration, (input) => { app.duration = wholeOr(input.value); });
+
+    // ---- the author: github asked once the typing stops, the box is left, a new name comes in or before it goes out ----
+
+    const users = new GitHubUsers((url) => root.fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer' }));
+    const authorLine = byId('author-line');
+    let authorSettled = true, authorTimer = 0, askedFor = '';
+
+    // the red line only once the typing stops, and package off while it shows
+    function showAuthor() {
+      const missing = authorMissing(app.author, users);
+      authorLine.textContent = authorSettled && missing ? WORDS.authorMissing : '';
+      appInputs.author.setAttribute('aria-invalid', String(authorSettled && missing));
+      packageButton.disabled = !(checked && checked.ok) || missing;
+    }
+
+    // github is asked about a name the build's rule takes and it has not answered for yet
+    function askable(name) {
+      return name !== '' && !authorMissing(name, users) && users.known(name) === null;
+    }
+
+    function askAuthor(name) {
+      askedFor = name;
+      return users.ask(name).then(() => {
+        if (app.author === name) showAuthor();
+      });
+    }
+
+    function settleAuthor() {
+      clearTimeout(authorTimer);
+      authorSettled = true;
+      if (app.author !== askedFor && askable(app.author)) askAuthor(app.author);
+      showAuthor();
+    }
+
+    appInputs.author.addEventListener('input', () => {
+      authorSettled = false;
+      clearTimeout(authorTimer);
+      authorTimer = setTimeout(settleAuthor, AUTHOR_WAIT_MS);
+      showAuthor();
+    });
+    appInputs.author.addEventListener('blur', () => {
+      if (typeof app.author === 'string') appInputs.author.value = app.author;
+      settleAuthor();
+    });
+
+    // whether the app may go out: anything but a name github's rules refuse or github lacks, asked first when github
+    // has not said, and never held when it cannot say
+    function authorReady() {
+      clearTimeout(authorTimer);
+      authorSettled = true;
+      const asked = askable(app.author) ? askAuthor(app.author) : Promise.resolve();
+      return asked.then(() => {
+        showAuthor();
+        if (!authorMissing(app.author, users)) return true;
+        appInputs.author.focus();
+        return false;
+      });
+    }
 
     function fillApp() {
       for (const [key, input] of Object.entries(appInputs)) if (doc.activeElement !== input) input.value = String(app[key]);
@@ -905,17 +967,18 @@
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
-    byId('export').addEventListener('click', () => withFonts(() => {
-      download(slug(app.id) + '.zip', exportZip(app, store, kit), 'application/zip');
-    }));
-    packageButton.addEventListener('click', () => withFonts(() => {
+    byId('export').addEventListener('click', () => withFonts(() => authorReady().then((ready) => {
+      if (ready) download(slug(app.id) + '.zip', exportZip(app, store, kit), 'application/zip');
+    })));
+    packageButton.addEventListener('click', () => withFonts(() => authorReady().then((ready) => {
+      if (!ready) return;
       try {
         const built = buildPackage(app, store, kit, new Date(), now());
         download(built.name, built.bytes, 'application/octet-stream');
       } catch (error) {
         say([error.line || error.message]);
       }
-    }));
+    })));
 
     // an app another composer exported, its pictures under new names here so undo still finds the old ones
     function adopt(opened) {

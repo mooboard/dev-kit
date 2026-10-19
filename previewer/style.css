@@ -30,7 +30,22 @@ main {
   gap: 20px;
 }
 
-h1 { margin: 0; font-size: 22px; font-weight: 700; }
+/* the wordmark's font: Fredoka SemiBold cut to the letters of mooboard, under the SIL Open Font License in
+   Fredoka-OFL.txt beside this file */
+@font-face {
+  font-family: "Fredoka";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("data:font/woff2;base64,d09GMgABAAAAAAUoAA8AAAAACWQAAATPAAIAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbgXocMAZgP1NUQVRAAFQRCAqGcIVkATYCJAMcCxAABCAFg3AHIBvFB1EUUkzxdYEpt12BEaAlhoHQlmZTgrYh0IfA4qWgX/Hz3GG4CtNhhLXged4/69z3XiYZkCszGuhvtEI7uyU7ohPQwa0U4l82dv8DoUBqhEzJJAKbbgaDoTtTt0ZD0epL7oTyRvjCK2TLE5A4+iupu5J4A+x8m8GgLglUXDTP/uzv3tKSxXMG44ViJohR2Rmq7hKAWekDh1M71y7IuyLRs4zO/XruwdIEs6KyuO9RgOdNNB2QDhi2TofrzBrOPQUCYgCAIkQEISBDgihKjjJy8fqbqaK2oaMnU3V1BptpS3FQOupLAWWwyUAB4QBRgPDIcwoQAxkghlNGAphsIc0Q0xmgjXX7KcMZMFE1oQHhDxOgw3lNU3pbPhPaa9goXlFELWdEe8D/44oWAe/nwkYB0GQWDDPEiRKj1UNnp5xel5+M0bUZ48FZZTq7p2ODenY4GDWL7HSs1hK3+LcE7h4v53HyD3eTAv3xFwQgX3UaKGAI4aBACgVKqEdNbVCARUewVgRhJBCATGo6IISqODwAFNAghSYghdEfxHBQDBePJhZ/BnDO/Sy8NVuyKRuznsAXFpIw8UDYAcSBGMgKuQEABgAomiYU+StOQEJhcp0HARVUtp0EZa/fv4jqYpT4SqLvE6nosaNu45wE1GrMp9eeWgOtqUNIy1oGVh86qDwAKVadhGL14447K5Mt+6dANnXprggWvDlSR+EiqHCbiDhO4k0IMKtBJHeBdeoGUjYtLR21GX0mc/zs2phhIwgiwghZtMTEvLB99e7kfCUAOWjkrXPAK8D6+IUb71lzlAP2VJ5oR4HV56NiUfDa/MidV3BupxLRk8tJc8VxjsXNzMllzKzVGeOIWUpBR6u9ooz57E7JIaqfvj5rsZNImjjEk64P5RKWP+hs7zCSK3VhcyUdMnNSh5ctE8Y5FiczK1Mw8xZXjG3rzzlcOXj6AZFwuS6XOHnYP8D8diVbUA1PSm4mqrlDv/tvbzORfUTk9Irnl4ikXrbMgc0Bqpojc3m5pH7C4lWXe7y+vgjlLkPYb5Q+OVOsiKrnfJR8m5BShqz4gki7Sun2vz2TZp/+8yhUR9dH9bya8FZy1Y4//9mVvEV5uJqW/vW7cMg+cPv2NxOTtiiPR9Jx/5+zDyMrv8pIkBSZAYegTK/mFD2eIlflbXa6WrwmYZnfkadLhrAYCot6BinI+zyfXwKkEaD0rTu5FNnwpBjtdR1JNk/fOdHbr688oXJ6buKTDyfE75l/Pd7i+gKwkgBl4Kz9243v/XNo/RHweIznAO9fHXaHKVHG0i9BBAVA8LdN5uUR/x5TEKnc3vk6difp+tvKu4usoVhFt5Nae6gkwG4FOw9zQ6UmIFpLXzdGAnshySLLXrIS5yJZa+/+qNlJtskq1BEYksUmEFOdyUJU9SfbSKiR6jh8XzMZxLLAEn51atQKKtBRex10VWCyWl4FhvLz8rA0cCownp+lnpdbUIEBQoJqWfwCClSoFRS0QEBP7bRTo058W4hLW26WJu3UcqpmaRZUx6nde4u3MU4zr0oYxtGg1RNX8TVCGrP9Omqr/RD0vQQEeDj1Gm1zB2CqFLi2DspIwS29ngRMa53B1/EI/lqTeDWpM5ClkcdYFr8mTo00AMLQUQIA") format("woff2");
+}
+
+/* the same header on every page: the cow, mooboard in the wordmark's font and teal, then the page's name */
+.brand { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; font-size: 20px; font-weight: 600;
+         line-height: 1; letter-spacing: -0.01em; }
+.brand .cow { width: 34px; height: 27px; flex: none; }
+.brand .mark { font-family: "Fredoka", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif; color: var(--lit); }
+.brand .page { min-width: 0; color: var(--type); overflow-wrap: anywhere; }
 
 .drop {
   position: relative;
@@ -73,5 +88,24 @@ h1 { margin: 0; font-size: 22px; font-weight: 700; }
 .toggle legend { float: left; padding: 0; margin-right: 4px; }
 .toggle label, label.toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; }
 input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; margin: 0; accent-color: var(--lit); }
+
+/* every select on every page: the browser's own list in one box with a chevron 16 px in and room for it */
+select {
+  max-width: 100%;
+  min-height: 44px;
+  padding: 0 44px 0 12px;
+  border: 2px solid var(--rule);
+  border-radius: 12px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: var(--ground) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%239fbfbb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 16px center / 12px 8px;
+  color: var(--type);
+  font: inherit;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+select:focus-visible { outline: 2px solid var(--lit); outline-offset: 2px; }
 
 .warnings { list-style: none; margin: 0; padding: 0; display: grid; justify-items: center; gap: 6px; color: var(--warn); }
