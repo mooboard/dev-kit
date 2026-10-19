@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title><!--name--></title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%2377edd7'/%3E%3C/svg%3E">
+<style>
+/*style*/
+</style>
+</head>
+<body>
+<main>
+  <h1><!--name--></h1>
+  <div class="stage" id="stage">
+    <div class="board" id="board">
+      <canvas class="leds" id="leds"></canvas>
+      <canvas class="glow" id="glow" aria-hidden="true"></canvas>
+    </div>
+  </div>
+  <div class="toggles">
+    <fieldset class="toggle" aria-label="Time of day">
+      <label><input type="radio" name="when" id="day" checked>Day</label>
+      <label><input type="radio" name="when" id="evening">Evening</label>
+      <label><input type="radio" name="when" id="night">Night</label>
+    </fieldset>
+    <label class="toggle" id="settings" hidden><select id="variant" aria-label="Settings"></select></label>
+  </div>
+</main>
+<script id="data" type="application/json">/*data*/</script>
+<script>/*previewer*/</script>
+<script>/*player*/</script>
+</body>
+</html>

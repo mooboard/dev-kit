@@ -1,0 +1,44 @@
+name: "App proposal"
+description: "Propose an app for mooboard."
+title: "App: "
+body:
+  - type: input
+    id: name
+    attributes:
+      label: "App name"
+    validations:
+      required: true
+  - type: input
+    id: shows
+    attributes:
+      label: "What it shows"
+      description: "One line."
+    validations:
+      required: true
+  - type: input
+    id: data
+    attributes:
+      label: "Where the data comes from"
+    validations:
+      required: true
+  - type: textarea
+    id: screens
+    attributes:
+      label: "Screens"
+      description: "Drop your 128×32 PNG or GIF files here."
+    validations:
+      required: true
+  - type: input
+    id: discord
+    attributes:
+      label: "Discord post"
+      placeholder: "https://discord.com/channels/"
+    validations:
+      required: true
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: "Rights"
+      options:
+        - label: "mooboard can build and ship this idea, with credit to me."
+          required: true
