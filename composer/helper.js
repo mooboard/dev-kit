@@ -56,6 +56,8 @@
     frames: 'More than 100 frames',
     needs: 'mooboard.json needs {key}',
     unknown: 'Unknown key in mooboard.json: {key}',
+    escape: 'mooboard.json has an escape that is not a whole character',
+    plain: 'mooboard.json has a hidden or control character',
     version: 'mooboard must be 1',
     id: 'id must be 3 to 32 lowercase letters, digits or dashes',
     name: 'name must be 1 to 24 characters',
@@ -955,8 +957,8 @@
       } else {
         good = false;
       }
-      good = good && [['x', W - 1], ['y', H - 1]].every(([axis, top]) => given(layer[axis], null) === null ||
-                                                                        isNumber(layer[axis], 0, top));
+      // a null x or y is a value the board refuses + only a missing one means the middle
+      good = good && [['x', W - 1], ['y', H - 1]].every(([axis, top]) => !(axis in layer) || isNumber(layer[axis], 0, top));
       good = good && typeof absent(layer.show, '') === 'string';
       if (!good) throw new Refused(fill(WORDS.layer, { number: number }));
       const uses = [];
@@ -964,8 +966,10 @@
         for (const key of wordsIn(layer.text)) uses.push([key, ['text', 'choice']]);
         const color = absent(layer.color, '#ffffff');
         if (!COLOR.test(color)) {
+          // a color setting is named in braces as the board reads it + a bare name is refused
           const found = /^\{([^{}]*)\}$/.exec(color);
-          uses.push([found ? found[1] : color, ['color']]);
+          if (!found) throw new Refused(fill(WORDS.layerSetting, { number: number, key: color }));
+          uses.push([found[1], ['color']]);
         }
       }
       for (const [key, want] of uses) {
@@ -1030,8 +1034,39 @@
   }
 
   // options: kit for the text, built for a package's own manifest, images the names an image layer may use
+  // every key and text that passes `fits` + down through lists and objects
+  function texts(value, fits) {
+    if (typeof value === 'string') return fits(value);
+    if (Array.isArray(value)) return value.every((item) => texts(item, fits));
+    if (value !== null && typeof value === 'object') return Object.keys(value).every((k) => fits(k) && texts(value[k], fits));
+    return true;
+  }
+
+  // whole characters + an escape of half a surrogate pair is not
+  function whole(text) {
+    return !/[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(text);
+  }
+
+  // a control, format, bidi, private use or noncharacter code point as the board refuses it in any text
+  function hidden(cp) {
+    if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f)) return true;
+    if (cp === 0xad || (cp >= 0x600 && cp <= 0x605) || [0x61c, 0x6dd, 0x70f, 0x890, 0x891, 0x8e2, 0x180e].includes(cp) ||
+        (cp >= 0x200b && cp <= 0x200f) || (cp >= 0x202a && cp <= 0x202e) || (cp >= 0x2060 && cp <= 0x2064) ||
+        (cp >= 0x2066 && cp <= 0x206f) || cp === 0xfeff || (cp >= 0xfff9 && cp <= 0xfffb) || cp === 0x110bd ||
+        cp === 0x110cd || (cp >= 0x13430 && cp <= 0x1343f) || (cp >= 0x1bca0 && cp <= 0x1bca3) ||
+        (cp >= 0x1d173 && cp <= 0x1d17a) || cp === 0xe0001 || (cp >= 0xe0020 && cp <= 0xe007f)) return true;
+    if ((cp >= 0xe000 && cp <= 0xf8ff) || cp >= 0xf0000) return true;
+    return (cp >= 0xfdd0 && cp <= 0xfdef) || (cp & 0xfffe) === 0xfffe;
+  }
+
+  function plain(text) {
+    return !Array.from(text).some((ch) => hidden(ch.codePointAt(0)));
+  }
+
   function checkManifest(manifest, options) {
     const built = Boolean(options.built), images = options.images === undefined ? null : options.images;
+    if (!texts(manifest, whole)) throw new Refused(WORDS.escape);
+    if (!texts(manifest, plain)) throw new Refused(WORDS.plain);
     for (const key of FIELDS.concat(built ? BUILT : [])) {
       if (!(key in manifest)) throw new Refused(fill(WORDS.needs, { key: key }));
     }

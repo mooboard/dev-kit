@@ -40,7 +40,11 @@
     return Promise.resolve().then(() => {
       const info = preview.parsePng(bytes);
       if (info.width > W || info.height > H) throw new helper.Refused(WORDS.pictureBig);
-      return inflate(info.idat, 'deflate', rowBytes(info)).then((raw) => preview.pngRgba(info, raw));
+      return inflate(info.idat, 'deflate', rowBytes(info)).then((raw) => {
+        // a stream that inflates past its own rows is refused as the kit and the board refuse it
+        if (raw.length > rowBytes(info)) throw new Error('png inflates past its rows');
+        return preview.pngRgba(info, raw);
+      });
     });
   }
 
@@ -1086,7 +1090,7 @@
     };
   }
 
-  const api = {};
+  const api = { decodePng };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.mooboardComposer = api;
   if (typeof document !== 'undefined' && document.getElementById('composer') !== null) start(document);

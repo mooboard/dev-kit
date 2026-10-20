@@ -53,6 +53,8 @@ REGULAR = 0o100644
 MANIFEST_MISSING = "No mooboard.json"
 MANIFEST_JSON = "mooboard.json is not a JSON object"
 MANIFEST_DEEP = "mooboard.json is nested too deep"
+MANIFEST_ESCAPE = "mooboard.json has an escape that is not a whole character"
+MANIFEST_PLAIN = "mooboard.json has a hidden or control character"
 NEEDS = "mooboard.json needs {key}"
 UNKNOWN = "Unknown key in mooboard.json: {key}"
 VERSION = "mooboard must be 1"
@@ -116,7 +118,7 @@ def _settings(items):
         name = key if isinstance(key, str) else "#%d" % number
         kind = setting.get("type") if isinstance(setting, dict) else None
         label = setting.get("label") if isinstance(setting, dict) else None
-        if (kind not in SETTING_FIELDS or not isinstance(key, str) or not KEY.fullmatch(key)
+        if (not isinstance(kind, str) or kind not in SETTING_FIELDS or not isinstance(key, str) or not KEY.fullmatch(key)
                 or not isinstance(label, str) or not 1 <= len(label) <= 24 or "default" not in setting
                 or set(setting) - {"key", "type", "label", "default"} - SETTING_FIELDS[kind]):
             raise Refused(SETTING.format(name=name))
@@ -157,7 +159,8 @@ def _layers(items, settings, images):
         kind = layer.get("type") if isinstance(layer, dict) else None
         if kind == "text":
             good = ({"type", "text", "size"} <= set(layer) <= TEXT_LAYER and isinstance(layer["text"], str)
-                    and layer["size"] in text.SIZES and layer.get("font", "nunito") in text.FONTS
+                    and _number(layer["size"], 0, 99) and layer["size"] in text.SIZES
+                    and layer.get("font", "nunito") in text.FONTS
                     and layer.get("align", "left") in ("left", "center", "right")
                     and isinstance(layer.get("color", "#ffffff"), str))
         elif kind == "image":
@@ -165,7 +168,8 @@ def _layers(items, settings, images):
             good = good and IMAGE.fullmatch(layer["src"]) is not None
         else:
             good = False
-        good = good and all(layer.get(axis) is None or _number(layer[axis], 0, top)
+        # a null x or y is a value the board refuses + only a missing one means the middle
+        good = good and all(axis not in layer or _number(layer[axis], 0, top)
                             for axis, top in (("x", W - 1), ("y", H - 1)))
         good = good and isinstance(layer.get("show", ""), str)
         if not good:
@@ -175,8 +179,11 @@ def _layers(items, settings, images):
             uses += [(key, ("text", "choice")) for key in WORD.findall(layer["text"])]
             color = layer.get("color", "#ffffff")
             if not COLOR.fullmatch(color):
+                # a color setting is named in braces as the board reads it + a bare name is refused
                 found = WORD.fullmatch(color)
-                uses.append((found.group(1) if found else color, ("color",)))
+                if not found:
+                    raise Refused(LAYER_SETTING.format(number=number, key=color))
+                uses.append((found.group(1), ("color",)))
         for key, want in uses:
             if kinds.get(key) not in want:
                 raise Refused(LAYER_SETTING.format(number=number, key=key))
@@ -232,6 +239,50 @@ def _depth(value):
     return deepest
 
 
+def _texts(value):
+    """every key and text in value"""
+    stack = [value]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, dict):
+            stack.extend(item)
+            stack.extend(item.values())
+        elif isinstance(item, list):
+            stack.extend(item)
+        elif isinstance(item, str):
+            yield item
+
+
+def _whole(value):
+    """every key and text in value is whole characters + an escape of half a surrogate pair is not"""
+    for text in _texts(value):
+        try:
+            text.encode("utf-8")
+        except UnicodeEncodeError:
+            return False
+    return True
+
+
+def _hidden(cp):
+    """a control, format, bidi, private use or noncharacter code point as the board refuses it in any text"""
+    if cp < 0x20 or 0x7F <= cp <= 0x9F:
+        return True
+    if (cp == 0xAD or 0x600 <= cp <= 0x605 or cp in (0x61C, 0x6DD, 0x70F, 0x890, 0x891, 0x8E2, 0x180E)
+            or 0x200B <= cp <= 0x200F or 0x202A <= cp <= 0x202E or 0x2060 <= cp <= 0x2064
+            or 0x2066 <= cp <= 0x206F or cp == 0xFEFF or 0xFFF9 <= cp <= 0xFFFB or cp in (0x110BD, 0x110CD)
+            or 0x13430 <= cp <= 0x1343F or 0x1BCA0 <= cp <= 0x1BCA3 or 0x1D173 <= cp <= 0x1D17A or cp == 0xE0001
+            or 0xE0020 <= cp <= 0xE007F):
+        return True
+    if 0xE000 <= cp <= 0xF8FF or cp >= 0xF0000:
+        return True
+    return 0xFDD0 <= cp <= 0xFDEF or (cp & 0xFFFE) == 0xFFFE
+
+
+def _plain(value):
+    """no key or text in value holds a hidden or control character"""
+    return not any(_hidden(ord(ch)) for text in _texts(value) for ch in text)
+
+
 def check_manifest(data, built=False, images=None):
     try:
         manifest = json.loads(bytes(data).decode("utf-8"), object_pairs_hook=_unique)
@@ -243,6 +294,10 @@ def check_manifest(data, built=False, images=None):
         raise Refused(MANIFEST_DEEP)
     if not isinstance(manifest, dict):
         raise Refused(MANIFEST_JSON)
+    if not _whole(manifest):
+        raise Refused(MANIFEST_ESCAPE)
+    if not _plain(manifest):
+        raise Refused(MANIFEST_PLAIN)
     for key in FIELDS + (BUILT if built else ()):
         if key not in manifest:
             raise Refused(NEEDS.format(key=key))
