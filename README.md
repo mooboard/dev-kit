@@ -21,7 +21,7 @@ python3 -m mooboard play samples/hello
 ```
 
 The previewer, the composer, and a sample app will all open in your browser.
-Rquires git, Python 3.9 or newer, and a browser.
+Requires git, Python 3.9 or newer, and a browser.
 
 ## Create your first app
 
@@ -43,7 +43,7 @@ Read the [rules](RULES.md) first.
 2. Drop it on the previewer to test.
 3. Post it in the apps forum on [Discord](https://mooboard.co/discord), then file an [app proposal](https://github.com/mooboard/dev-kit/issues/new?template=app-proposal.yml). (coming soon, just @rakhicow for now)
 
-The [previewer](https://mooboard.github.io/dev-kit/previewer/) and the [composer](https://mooboard.github.io/dev-kit/composer/) are also websites,
+The [previewer](https://mooboard.github.io/dev-kit/previewer/) and the [composer](https://mooboard.github.io/dev-kit/composer/) are also websites.
 
 ## Help
 

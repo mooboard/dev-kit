@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# Checks a kit for what must not be public: paths, keys, tokens, addresses and hidden text.
-# Usage: python3 tools/check_clean.py [folder], the folder above this script by default.
-# Each finding prints as path:line: rule and never shows the text it found.
-# In a git clone it skips what git ignores, such as the samples' build folders, as git never publishes them.
+# Checks a kit for what must not be public such as paths, keys, tokens, addresses, and hidden text.
+# Usage: python3 tools/check_clean.py [folder]
+
 import os
 import re
 import struct

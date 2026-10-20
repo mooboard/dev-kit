@@ -18,6 +18,8 @@ NO_CHANGE = "readme: no line that says what to change"
 NOT_MADE = "readme: {path} was not made"
 SAME = "readme: the change did not change the app"
 EDITED = "readme: {path} no longer says {word}. git checkout {path} puts it back."
+CHANGES = (re.compile(r"In (?P<path>\S+?\.py), change `(?P<word>[^`]+)`"),
+           re.compile(r"Change `(?P<word>[^`]+)` in (?P<path>\S+?\.py)"))
 
 
 def steps(readme):
@@ -47,11 +49,11 @@ def main():
         print(NO_STEPS)
         return 1
     folder, lines = found
-    change = re.search(r"Change `([^`]+)` in (\S+?\.py)", readme)
+    change = next((found for found in (pattern.search(readme) for pattern in CHANGES) if found), None)
     if change is None:
         print(NO_CHANGE)
         return 1
-    word, path = change.groups()
+    word, path = change.group("word"), change.group("path")
     if not os.path.isfile(os.path.join(KIT, path)):
         print(NO_CHANGE)
         return 1

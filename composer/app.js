@@ -12,6 +12,8 @@
   const FILE_CAPS = { 'mooboard.json': 8 * 1024, 'app.py': 1024 * 1024 };
   const PICTURE_CAP = 64 * 1024;
   const SLICE = 4096;
+  const GITHUB_USERS = 'https://api.github.com/users/';
+  const GITHUB_WAIT_MS = 3000;
 
   const WORDS = {
     defaultName: 'My app',
@@ -72,6 +74,7 @@
     variant: '{label}: {value}',
     unreadable: 'Can’t read {name}',
     unreadableFile: 'Can’t read this file',
+    authorMissing: 'GitHub username not found.',
   };
 
   // ---- the composition ----
@@ -907,10 +910,59 @@
     }
   }
 
-  // the build's lines for the app's fields, its settings and its screens
+  // the build's line for an author alone
+  function authorRefusal(author) {
+    return refusal(() => helper.checkManifest(Object.assign({}, STAND_IN, { author: author }), {}));
+  }
+
+  // github's users as the author box asks after them: found on a 200, missing on a 404, and unknown on anything else
+  // or after a wait + found and missing are kept by the name in any case and unknown is asked again next time
+  class GitHubUsers {
+    constructor(fetcher, waitMs) {
+      this.fetcher = fetcher;
+      this.waitMs = waitMs === undefined ? GITHUB_WAIT_MS : waitMs;
+      this.answers = new Map();
+      this.asking = new Map();
+    }
+
+    known(name) {
+      return this.answers.get(String(name).toLowerCase()) || null;
+    }
+
+    ask(name) {
+      const key = String(name).toLowerCase();
+      if (this.answers.has(key)) return Promise.resolve(this.answers.get(key));
+      if (!this.asking.has(key)) {
+        const answer = Promise.resolve()
+          .then(() => this.fetcher(GITHUB_USERS + encodeURIComponent(name)))
+          .then((reply) => (reply.status === 200 ? 'found' : reply.status === 404 ? 'missing' : 'unknown'), () => 'unknown')
+          .then((said) => {
+            if (said !== 'unknown') this.answers.set(key, said);
+            return said;
+          });
+        let timer = 0;
+        const waited = new Promise((done) => { timer = setTimeout(() => done('unknown'), this.waitMs); });
+        this.asking.set(key, Promise.race([answer, waited]).then((said) => {
+          clearTimeout(timer);
+          this.asking.delete(key);
+          return said;
+        }));
+      }
+      return this.asking.get(key);
+    }
+  }
+
+  // the author box's red line: a name the build's rule refuses or one github answered 404 for, never an empty one
+  function authorMissing(author, users) {
+    if (author === '') return false;
+    return authorRefusal(author) !== null || users.known(author) === 'missing';
+  }
+
+  // the build's lines for the app's fields, its settings and its screens + the author's apart, for its own box
   function check(app, store, kit, now) {
-    const out = { app: null, settings: null, screen: [], warnings: [], frames: 0, ok: false };
-    out.app = refusal(() => helper.checkManifest(fieldsOf(app), { kit: kit }));
+    const out = { app: null, author: null, settings: null, screen: [], warnings: [], frames: 0, ok: false };
+    out.app = refusal(() => helper.checkManifest(Object.assign(fieldsOf(app), { author: STAND_IN.author }), { kit: kit }));
+    out.author = authorRefusal(app.author);
     const names = exportNames(app, store), all = kitFor(kit, store, names);
     out.settings = refusal(() => helper.checkManifest(Object.assign({}, STAND_IN, app.settings.length
       ? { settings: app.settings.map(settingJson) } : {}), { kit: all }));
@@ -931,7 +983,7 @@
       });
       if (line !== null && !out.screen.includes(line)) out.screen.push(line);
     }
-    out.ok = out.app === null && out.settings === null && out.screen.length === 0;
+    out.ok = out.app === null && out.author === null && out.settings === null && out.screen.length === 0;
     return out;
   }
 
@@ -947,7 +999,7 @@
                 copyFrame, deleteFrame, moveFrame, timeOf, History, addImage, cleared, paint, resized, addSetting,
                 settingOf, bind, relabel, removeSetting, settingValues, usedFonts, allElements, exportNames,
                 manifestOf, picturesOf, appFiles, exportZip, parseLiteral, framesIn, readApp, kitFor, composeApp,
-                frameView, check, buildPackage };
+                frameView, check, buildPackage, GitHubUsers, authorMissing };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.mooboardApp = api;
 })(typeof window !== 'undefined' ? window : this);
