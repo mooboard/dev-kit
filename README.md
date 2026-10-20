@@ -41,7 +41,7 @@ Read the [rules](RULES.md) first.
 
 1. Draw or render your screens on [this](templates/blank.png) (or similar) template in any pixel editor. The board's colors, fonts, sprites and approved screens are in the repo.
 2. Drop it on the previewer to test.
-3. Post it in the apps forum on [Discord](https://mooboard.co/discord), then file an [app proposal](https://github.com/mooboard/dev-kit/issues/new?template=app-proposal.yml). (coming soon, just @rakhicow for now)
+3. Post it in the [apps forum](https://discord.com/channels/1559692577538707508/1559708612031680533) on [Discord](https://mooboard.co/discord), then file an [app proposal](https://github.com/mooboard/dev-kit/issues/new?template=app-proposal.yml).
 
 The [previewer](https://mooboard.github.io/dev-kit/previewer/) and the [composer](https://mooboard.github.io/dev-kit/composer/) are also websites.
 
