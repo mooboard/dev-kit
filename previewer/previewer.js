@@ -27,6 +27,7 @@
     noCheck: 'This browser can’t check the pictures in a .mooboard file',
     textLength: 'Must be 1 to {max} characters',
     textHidden: 'Must not hold hidden characters',
+    thisApp: 'This app',
   };
 
   // ---- the led look as the simulator draws it ----
@@ -902,7 +903,7 @@
       if (line) throw new Refusal(line);
     }
     if (!iconOk(icon)) throw new Refusal(WORDS.icon);
-    const name = typeof manifest.name === 'string' ? manifest.name : '';
+    const name = tileName(manifest.name);
     return { format: store ? 2 : 1, name: name, icon: icon, gif: store ? null : gif, manifest: manifest, bytes: json,
              images: images };
   }
@@ -1153,12 +1154,19 @@
     return decode(bytes, browserInflate);
   }
 
+  // a name from a file on a tile only as the board names an app + 1 to 24 plain characters and no link else This app
+  // as the web app's own warning before add names one
+  function tileName(name) {
+    return plain(name, 24) ? name : WORDS.thisApp;
+  }
+
   // what a dropped file shows on the board and its tile on home + a picture's tile is named after the file + a store
   // app's sits in the apps row with no picture
   function readFile(bytes, fileName) {
     if (!isZip(bytes)) {
       return decodeInPage(bytes).then((image) => ({
-        image: image, tile: { name: fileName.replace(/\.[^.]*$/, '') || fileName, icon: defaultIcon(image), store: false },
+        image: image, tile: { name: tileName(fileName.replace(/\.[^.]*$/, '') || fileName), icon: defaultIcon(image),
+                              store: false },
       }));
     }
     // a browser with no inflater of its own cannot hold a package's pictures to the board's rules so it gives no tile
@@ -1362,7 +1370,9 @@
       const err = make('p', { class: 'field__err', hidden: true });
       const label = make(s.type === 'choice' || s.type === 'toggle' ? 'span' : 'label',
                          { class: 'field__label', id: id + '-label', text: s.label });
-      const field = make('div', { class: s.type === 'text' ? 'field' : 'field field--inline' }, [label]);
+      // a text and a choice of more than three or whose words run past 18 stack as the board's sheet stacks them
+      const stacked = s.type === 'text' || (s.type === 'choice' && (s.options.length > 3 || s.options.join('').length > 18));
+      const field = make('div', { class: stacked ? 'field' : 'field field--inline' }, [label]);
       let control;
       if (s.type === 'choice') {
         control = make('div', { class: 'seg', role: 'radiogroup', 'aria-labelledby': label.id }, s.options.map((option) => {
