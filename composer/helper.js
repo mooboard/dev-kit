@@ -34,6 +34,8 @@
   const LAYER_ORDER = ['type', 'text', 'src', 'x', 'y', 'size', 'font', 'color', 'align', 'show'];
   const VARIANT_COLORS = ['#77edd7', '#ffb7c9'];
   const ID = /^[a-z0-9-]{3,32}$/;
+  // the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
+  const RESERVED_IDS = ['prayer', 'countdowns', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace'];
   const AUTHOR = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
   const KEY = /^[a-z][a-z0-9_]{0,15}$/;
   const COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -60,6 +62,7 @@
     plain: 'mooboard.json has a hidden or control character',
     version: 'mooboard must be 1',
     id: 'id must be 3 to 32 lowercase letters, digits or dashes',
+    idTaken: 'id {id} is taken by a mooboard app',
     name: 'name must be 1 to 24 characters',
     nameLink: 'name can’t be a link',
     author: 'author must be a GitHub username',
@@ -1076,6 +1079,7 @@
     }
     if (!isNumber(manifest.mooboard, 1, 1)) throw new Refused(WORDS.version);
     if (typeof manifest.id !== 'string' || !ID.test(manifest.id)) throw new Refused(WORDS.id);
+    if (RESERVED_IDS.includes(manifest.id)) throw new Refused(fill(WORDS.idTaken, { id: manifest.id }));
     const name = manifest.name;
     if (typeof name !== 'string' || points(name).length < 1 || points(name).length > 24 || !name.trim() ||
         OTHER.test(name)) throw new Refused(WORDS.name);

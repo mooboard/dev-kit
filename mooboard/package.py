@@ -37,6 +37,8 @@ LAYER_ORDER = ("type", "text", "src", "x", "y", "size", "font", "color", "align"
 IMAGE_LAYER = {"type", "src", "x", "y", "show"}
 VARIANT_COLORS = ("#77edd7", "#ffb7c9")
 ID = re.compile(r"[a-z0-9-]{3,32}")
+# the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
+RESERVED_IDS = ("prayer", "countdowns", "countdown", "sketch", "life", "plasma", "starfield", "fireplace")
 AUTHOR = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}")
 KEY = re.compile(r"[a-z][a-z0-9_]{0,15}")
 COLOR = re.compile(r"#[0-9a-fA-F]{6}")
@@ -59,6 +61,7 @@ NEEDS = "mooboard.json needs {key}"
 UNKNOWN = "Unknown key in mooboard.json: {key}"
 VERSION = "mooboard must be 1"
 ID_WORDS = "id must be 3 to 32 lowercase letters, digits or dashes"
+ID_TAKEN = "id {id} is taken by a mooboard app"
 NAME = "name must be 1 to 24 characters"
 NAME_LINK = "name can’t be a link"
 AUTHOR_WORDS = "author must be a GitHub username"
@@ -309,6 +312,8 @@ def check_manifest(data, built=False, images=None):
         raise Refused(VERSION)
     if not isinstance(manifest["id"], str) or not ID.fullmatch(manifest["id"]):
         raise Refused(ID_WORDS)
+    if manifest["id"] in RESERVED_IDS:
+        raise Refused(ID_TAKEN.format(id=manifest["id"]))
     name = manifest["name"]
     if (not isinstance(name, str) or not 1 <= len(name) <= 24 or not name.strip()
             or any(unicodedata.category(ch)[0] == "C" for ch in name)):
