@@ -1,4 +1,4 @@
-# mooboard dev-kit v2.0
+# mooboard dev-kit v2.1
 
 Make screens and apps for mooboard, a 128×32 matrix LED display.
 
