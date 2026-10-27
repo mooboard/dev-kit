@@ -35,7 +35,12 @@
   const VARIANT_COLORS = ['#77edd7', '#ffb7c9'];
   const ID = /^[a-z0-9-]{3,32}$/;
   // the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
-  const RESERVED_IDS = ['prayer', 'countdowns', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace'];
+  // + the catalog renderers and built-in messages app
+  const RESERVED_IDS = ['prayer', 'countdowns', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace',
+    'pong', 'snake', 'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits',
+    'timer', 'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity',
+    'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally',
+    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander', 'messages'];
   const AUTHOR = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
   const KEY = /^[a-z][a-z0-9_]{0,15}$/;
   const COLOR = /^#[0-9a-fA-F]{6}$/;

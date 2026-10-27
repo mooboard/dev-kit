@@ -553,8 +553,15 @@
   const DATA_CAP = 512 * 1024;              // a store app's data entry
   const FILE_CAP = 8 * 1024;                // the manifest and the icon
   // the store's renderers in the board's order + a store app names one the firmware draws
-  const RENDERERS = ['prayer', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace'];
-  const FORMAT_2 = ['format', 'id', 'name', 'version', 'by', 'description', 'category', 'uses', 'minFirmware', 'boards'];
+  // + the catalog renderers
+  const RENDERERS = ['prayer', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace', 'pong', 'snake',
+    'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits', 'timer',
+    'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity',
+    'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally',
+    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander'];
+  // + a catalog app's settings and controls + the board holds them to its key table
+  const FORMAT_2 = ['format', 'id', 'name', 'version', 'by', 'description', 'category', 'uses', 'minFirmware', 'boards',
+    'settings', 'controls'];
   const SEMVER = /^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})(-(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
 
   // a package the board would refuse + its line is the build's own
@@ -1023,8 +1030,9 @@
     hour: [[[0, -1], [0, -2]], [[0, -1], [1, -2]], [[1, -1]], [[1, 0], [2, -1]]],
   };
   const CLOCK_ANGLES = [0, 26.57, 45, 63.43];
-  // home's built in apps in the board's first order + tv shows only while something feeds it
-  const HOME_APPS = ['media', 'calendar', 'sports', 'lights', 'clock', 'behavior', 'system', 'messages'];
+  // home's built in apps in the board's first order + tv shows only while something feeds it + messages lives in the
+  // apps section below
+  const HOME_APPS = ['media', 'calendar', 'sports', 'lights', 'clock', 'behavior', 'system'];
   const HOME_NAMES = {
     media: 'Media', calendar: 'Calendar', sports: 'Sports',
     lights: 'Lights', clock: 'Clock', behavior: 'Behavior',

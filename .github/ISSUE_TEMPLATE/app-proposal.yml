@@ -2,6 +2,18 @@ name: "App proposal"
 description: "Propose an app for mooboard."
 title: "App: "
 body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: "Category"
+      options:
+        - Games
+        - Ambiance
+        - Clock Faces
+        - Tools
+        - Misc
+    validations:
+      required: true
   - type: input
     id: name
     attributes:

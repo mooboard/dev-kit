@@ -11,7 +11,7 @@ import zlib
 
 MAX_BYTES = 2 * 1024 * 1024
 ALLOWED_TYPES = {".png", ".gif", ".svg", ".gpl", ".txt", ".md", ".ttf", ".html", ".js", ".css", ".yml", ".py"}
-ALLOWED_NAMES = {"LICENSE", ".gitignore", "mooboard.json"}
+ALLOWED_NAMES = {"LICENSE", ".gitignore", "mooboard.json", "list.json"}
 TEXT_TYPES = {".svg", ".gpl", ".txt", ".md", ".html", ".js", ".css", ".yml", ".py", ".json", ""}
 SKIP_DIRS = {".git"}
 
@@ -128,6 +128,8 @@ def scan(root, rules=RULES, skip=()):
         for name in sorted(files):
             path = os.path.join(folder, name)
             rel = os.path.relpath(path, root).replace(os.sep, "/")
+            if rel == ".git":
+                continue
             if rel in unpublished:
                 continue
             findings += [(rel, 0, rule) for rule in rules_in(rel, rules)]
@@ -153,6 +155,8 @@ def check(root):
         for name in sorted(files):
             path = os.path.join(folder, name)
             rel = os.path.relpath(path, root).replace(os.sep, "/")
+            if rel == ".git":
+                continue
             if rel in unpublished:
                 continue
             count += 1

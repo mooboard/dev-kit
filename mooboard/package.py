@@ -38,7 +38,13 @@ IMAGE_LAYER = {"type", "src", "x", "y", "show"}
 VARIANT_COLORS = ("#77edd7", "#ffb7c9")
 ID = re.compile(r"[a-z0-9-]{3,32}")
 # the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
-RESERVED_IDS = ("prayer", "countdowns", "countdown", "sketch", "life", "plasma", "starfield", "fireplace")
+# + the catalog renderers and built-in messages app
+RESERVED_IDS = ("prayer", "countdowns", "countdown", "sketch", "life", "plasma", "starfield", "fireplace", "pong",
+                "snake", "blocks", "maze", "aquarium", "lava", "aurora", "rain", "sunmoon", "word", "quotes",
+                "habits", "timer", "pomodoro", "scoreboard", "dice", "breakout", "invaders", "flappy", "cycles",
+                "fireworks", "nightcity", "snowglobe", "raincode", "oktowake", "chores", "facts", "jokes",
+                "intervals", "chessclock", "wheel", "tally", "vfdstereo", "microracer", "pixelpinball", "microrogue",
+                "spacelander", "messages")
 AUTHOR = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}")
 KEY = re.compile(r"[a-z][a-z0-9_]{0,15}")
 COLOR = re.compile(r"#[0-9a-fA-F]{6}")

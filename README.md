@@ -1,4 +1,4 @@
-# mooboard dev-kit v1.0
+# mooboard dev-kit v3 (development draft)
 
 Make screens and apps for mooboard, a 128×32 matrix LED display.
 
@@ -26,6 +26,16 @@ Requires git, Python 3.9 or newer, and a browser.
 ## Create your first app
 
 In samples/hello/app.py, change `Hello` to your desired text. Run `python3 -m mooboard play samples/hello` again to view your app folder.
+
+For a live app like the prototype's games, ambiance, and tools:
+
+```sh
+python3 -m mooboard renderers
+python3 -m mooboard new "My Racer" --uses microracer --author YOUR-GITHUB-NAME
+python3 -m mooboard build "My Racer"
+```
+
+Live apps use the board's renderers, settings, controls, and data. See [Live apps](docs/LIVE_APPS.md) for what you can change and how to test and submit them. Categories are Games, Ambiance, Clock Faces, Tools, and Misc. Clock face installation and new renderer development are still being built. See [v3 readiness](docs/V3_READINESS.md).
 
 ## To export
 
