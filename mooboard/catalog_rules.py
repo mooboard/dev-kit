@@ -7,7 +7,7 @@ import struct
 import unicodedata
 import zlib
 
-CATALOG_USES = ('pong', 'snake', 'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits', 'timer', 'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity', 'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally', 'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander')
+CATALOG_USES = ('pong', 'snake', 'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits', 'timer', 'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity', 'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally', 'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander', 'aibrief', 'aipet', 'aiscene', 'aiface', 'flightglance', 'dinorunner', 'missiledefense', 'minesweeper', 'wordguess', 'waterfall', 'cybercity', 'synthwave', 'dune')
 USES = ('prayer', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace') + CATALOG_USES
 SPEED = {'speed': ('choice', 3)}
 SPEED_COLORS = dict(SPEED, colors=('choice', 2))
@@ -18,8 +18,9 @@ def _row(kind, settings=None, controls=None, needs=()):
 
 def _buttons(*keys):
     return {key: ('button', 0) for key in keys}
-RENDERER_KEYS = {'pong': _row('card', SPEED_COLORS, needs=('minute',)), 'snake': _row('card', SPEED_COLORS), 'blocks': _row('card', SPEED), 'maze': _row('card', SPEED), 'aquarium': _row('card', {'fish': ('choice', 3)}), 'lava': _row('card', COLOR_SPEED), 'aurora': _row('card', dict({'colors': ('choice', 3)}, **SPEED)), 'rain': _row('card', {'rain': ('choice', 3), 'city': ('choice', 2)}), 'sunmoon': _row('card', needs=('clock', 'place')), 'word': _row('card', needs=('clock', 'item')), 'quotes': _row('card', needs=('clock', 'item')), 'habits': _row('card', controls={'habits': ('list', 6)}, needs=('clock', 'entries')), 'timer': _row('hold', controls=dict(_buttons('start', 'add', 'pause', 'resume', 'cancel', 'sw_start', 'sw_stop', 'sw_reset'), countdown=('readout', 0), stopwatch=('readout', 0))), 'pomodoro': _row('hold', {'focus': ('choice', 6), 'break': ('choice', 3), 'long_break': ('choice', 4)}, dict(_buttons('start', 'pause', 'resume', 'skip', 'stop'), left=('readout', 0))), 'scoreboard': _row('hold', {'left': ('text', 8), 'right': ('text', 8), 'left_color': ('color', 0), 'right_color': ('color', 0)}, dict({'left': ('stepper', 0), 'right': ('stepper', 0)}, **_buttons('reset', 'done'))), 'dice': _row('hold', {'dice': ('choice', 2)}, dict(_buttons('roll', 'flip'), result=('readout', 0))), 'breakout': _row('card', SPEED), 'invaders': _row('card', SPEED_COLORS), 'flappy': _row('card', SPEED), 'cycles': _row('card', dict({'riders': ('choice', 3)}, **SPEED)), 'fireworks': _row('card', {'colors': ('choice', 3), 'show': ('choice', 2)}), 'nightcity': _row('card'), 'snowglobe': _row('card', {'scene': ('choice', 3)}), 'raincode': _row('card', COLOR_SPEED), 'oktowake': _row('night', {'bedtime': ('choice', 5), 'wake': ('choice', 5), 'clock': ('toggle', 0)}, needs=('clock',)), 'chores': _row('card', {'people': ('text', 32), 'rotate': ('choice', 2)}, {'chores': ('list', 6)}, needs=('clock', 'entries')), 'facts': _row('card', needs=('clock', 'item')), 'jokes': _row('card', needs=('clock', 'item')), 'intervals': _row('hold', {'work': ('choice', 5), 'rest': ('choice', 4), 'rounds': ('choice', 5)}, dict(_buttons('start', 'pause', 'resume', 'skip', 'stop'), phase=('readout', 0))), 'chessclock': _row('hold', {'time': ('choice', 6), 'increment': ('choice', 5)}, _buttons('left', 'right', 'pause', 'reset', 'done')), 'wheel': _row('hold', controls=dict({'items': ('list', 8)}, **_buttons('spin'))), 'tally': _row('hold', {'label': ('text', 12)}, dict({'count': ('stepper', 0)}, **_buttons('add', 'reset', 'done'))), 'vfdstereo': _row('card', {'mode': ('choice', 3), 'colors': ('choice', 3)}), 'microracer': _row('card', {'speed': ('choice', 3), 'track': ('choice', 3)}), 'pixelpinball': _row('card', {'speed': ('choice', 3), 'table': ('choice', 3)}), 'microrogue': _row('card', {'speed': ('choice', 3), 'theme': ('choice', 3)}), 'spacelander': _row('card', {'speed': ('choice', 3), 'planet': ('choice', 3)})}
+RENDERER_KEYS = {'pong': _row('card', SPEED_COLORS, needs=('minute',)), 'snake': _row('card', SPEED_COLORS), 'blocks': _row('card', SPEED), 'maze': _row('card', SPEED), 'aquarium': _row('card', {'fish': ('choice', 3)}), 'lava': _row('card', COLOR_SPEED), 'aurora': _row('card', dict({'colors': ('choice', 3)}, **SPEED)), 'rain': _row('card', {'rain': ('choice', 3), 'city': ('choice', 2)}), 'sunmoon': _row('card', needs=('clock', 'place')), 'word': _row('card', needs=('clock', 'item')), 'quotes': _row('card', needs=('clock', 'item')), 'habits': _row('card', controls={'habits': ('list', 6)}, needs=('clock', 'entries')), 'timer': _row('hold', controls=dict(_buttons('start', 'add', 'pause', 'resume', 'cancel', 'sw_start', 'sw_stop', 'sw_reset'), countdown=('readout', 0), stopwatch=('readout', 0))), 'pomodoro': _row('hold', {'focus': ('choice', 6), 'break': ('choice', 3), 'long_break': ('choice', 4)}, dict(_buttons('start', 'pause', 'resume', 'skip', 'stop'), left=('readout', 0))), 'scoreboard': _row('hold', {'left': ('text', 8), 'right': ('text', 8), 'left_color': ('color', 0), 'right_color': ('color', 0)}, dict({'left': ('stepper', 0), 'right': ('stepper', 0)}, **_buttons('reset', 'done'))), 'dice': _row('hold', {'dice': ('choice', 2)}, dict(_buttons('roll', 'flip'), result=('readout', 0))), 'breakout': _row('card', SPEED), 'invaders': _row('card', SPEED_COLORS), 'flappy': _row('card', SPEED), 'cycles': _row('card', dict({'riders': ('choice', 3)}, **SPEED)), 'fireworks': _row('card', {'colors': ('choice', 3), 'show': ('choice', 2)}), 'nightcity': _row('card'), 'snowglobe': _row('card', {'scene': ('choice', 3)}), 'raincode': _row('card', COLOR_SPEED), 'oktowake': _row('night', {'bedtime': ('choice', 5), 'wake': ('choice', 5), 'clock': ('toggle', 0)}, needs=('clock',)), 'chores': _row('card', {'people': ('text', 32), 'rotate': ('choice', 2)}, {'chores': ('list', 6)}, needs=('clock', 'entries')), 'facts': _row('card', needs=('clock', 'item')), 'jokes': _row('card', needs=('clock', 'item')), 'intervals': _row('hold', {'work': ('choice', 5), 'rest': ('choice', 4), 'rounds': ('choice', 5)}, dict(_buttons('start', 'pause', 'resume', 'skip', 'stop'), phase=('readout', 0))), 'chessclock': _row('hold', {'time': ('choice', 6), 'increment': ('choice', 5)}, _buttons('left', 'right', 'pause', 'reset', 'done')), 'wheel': _row('hold', controls=dict({'items': ('list', 8)}, **_buttons('spin'))), 'tally': _row('hold', {'label': ('text', 12)}, dict({'count': ('stepper', 0)}, **_buttons('add', 'reset', 'done'))), 'vfdstereo': _row('card', {'mode': ('choice', 2), 'colors': ('choice', 3)}), 'microracer': _row('card', {'speed': ('choice', 3), 'track': ('choice', 3)}), 'pixelpinball': _row('card', {'speed': ('choice', 3), 'table': ('choice', 3)}), 'microrogue': _row('card', {'speed': ('choice', 3), 'theme': ('choice', 3)}), 'spacelander': _row('card', {'speed': ('choice', 3), 'planet': ('choice', 3)}), 'aibrief': _row('card', {'tone': ('choice', 3), 'personal': ('toggle', 0), 'accent': ('color', 0)}, needs=('ai', 'clock')), 'aipet': _row('card', {'name': ('text', 12), 'color': ('color', 0), 'persona': ('choice', 4)}, needs=('clock',)), 'aiscene': _row('card', {'scene': ('text', 32), 'style': ('choice', 3), 'refresh': ('choice', 3)}, needs=('ai',)), 'aiface': _row('card', {'describe': ('text', 32)}, needs=('clock',)), 'flightglance': _row('card', {'radius': ('choice', 5), 'units': ('choice', 2), 'follow': ('text', 32), 'follow2': ('text', 32), 'cycle': ('choice', 4), 'layout': ('choice', 8), 'quiet': ('choice', 4), 'title': ('choice', 2)}), 'dinorunner': _row('card', SPEED), 'missiledefense': _row('card', SPEED), 'minesweeper': _row('card', SPEED), 'wordguess': _row('card', SPEED), 'waterfall': _row('card', {'flow': ('choice', 3), 'mist': ('toggle', 0)}), 'cybercity': _row('card', {'rain': ('choice', 3), 'palette': ('choice', 3)}), 'synthwave': _row('card', {'speed': ('choice', 3), 'palette': ('choice', 3)}), 'dune': _row('card', COLOR_SPEED)}
 CATALOG_FIRMWARE = (0, 3, 1)
+USES_FIRMWARE = {'vfdstereo': (0, 3, 2), 'microracer': (0, 3, 2), 'pixelpinball': (0, 3, 2), 'microrogue': (0, 3, 2), 'spacelander': (0, 3, 2), 'aibrief': (0, 3, 2), 'aipet': (0, 3, 2), 'aiscene': (0, 3, 2), 'aiface': (0, 3, 2), 'flightglance': (0, 3, 2), 'dinorunner': (0, 3, 2), 'missiledefense': (0, 4, 0), 'minesweeper': (0, 4, 0), 'wordguess': (0, 4, 0), 'waterfall': (0, 3, 2), 'cybercity': (0, 3, 2), 'synthwave': (0, 3, 2), 'dune': (0, 3, 2)}
 BOARDS = ('s3', 'p4')
 BOARD_CAP = {'s3': 2 * 1024 * 1024, 'p4': 8 * 1024 * 1024}
 ENTRY_CAP = 512 * 1024
@@ -28,6 +29,7 @@ MAX_DEPTH = 3
 MANIFEST_CAP = 8 * 1024
 ICON_CAP = 8 * 1024
 INDEX_CAP = 64 * 1024
+APPS_MAX = 64
 ICON = 32
 NAME_MAX = 24
 DESCRIPTION_MAX = 80
@@ -39,6 +41,10 @@ CONTROLS_MAX = 16
 LABEL_MAX = 24
 NEEDED_KEYS = ('format', 'id', 'name', 'version', 'by', 'description', 'category')
 REPO_ONLY = ('README.md', 'LICENSE')
+WORDS_FILE = 'words.txt'
+WORDS_USES = ('wordguess',)
+WORDS_MAX = 16384
+WORD = re.compile('[a-z]{5}')
 NOT_APPS = ('builder', 'dist', 'Seasonal')
 ID = re.compile('[a-z0-9-]{1,32}')
 KEY = re.compile('[a-z][a-z0-9_]{0,15}')
@@ -199,8 +205,9 @@ def check_sheet(man, where):
         if 'settings' in man or 'controls' in man:
             raise Refused('%s: a %s app takes no settings or controls' % (where, man['uses']))
         return
-    need = '.'.join(map(str, CATALOG_FIRMWARE))
-    if tuple((int(n) for n in man.get('minFirmware', '0.0.0').split('.'))) < CATALOG_FIRMWARE:
+    first = max(CATALOG_FIRMWARE, USES_FIRMWARE.get(man['uses'], CATALOG_FIRMWARE))
+    need = '.'.join(map(str, first))
+    if tuple((int(n) for n in man.get('minFirmware', '0.0.0').split('.'))) < first:
         raise Refused('%s: a %s app needs minFirmware %s or later' % (where, man['uses'], need))
     check_settings(settings, where)
     check_controls(controls, settings, where)
@@ -405,6 +412,28 @@ def read_data(folder, where):
             data[path] = body
     return data
 
+def read_words(body, where):
+    text = body.decode('ascii', 'replace')
+    if not text:
+        raise Refused('%s/words.txt holds no words' % where)
+    if not text.endswith('\n'):
+        raise Refused('%s/words.txt line %d does not end with a newline' % (where, text.count('\n') + 1))
+    lines = text[:-1].split('\n')
+    if len(lines) > WORDS_MAX:
+        raise Refused('%s/words.txt has more than %d words' % (where, WORDS_MAX))
+    out, last = (bytearray(), None)
+    for n, word in enumerate(lines, 1):
+        if not WORD.fullmatch(word):
+            raise Refused('%s/words.txt line %d is not five letters a to z' % (where, n))
+        if last is not None and word <= last:
+            raise Refused('%s/words.txt line %d is not after the line before' % (where, n))
+        value = 0
+        for ch in word:
+            value = value * 26 + ord(ch) - ord('a')
+        out += value.to_bytes(3, 'big')
+        last = word
+    return bytes(out)
+
 def manifest_bytes(man):
     man = dict(man, boards=man.get('boards', list(BOARDS)))
     if 'settings' in man:
@@ -429,13 +458,29 @@ def write_zip(entries):
 def load_app(root, category, folder, app_dir=None):
     where = '%s/%s' % (category, folder)
     base = app_dir or os.path.join(root, category, folder)
+    try:
+        kind = json.loads(_read(os.path.join(base, 'mooboard.json')))
+    except (OSError, ValueError):
+        kind = None
+    if isinstance(kind, dict) and kind.get('format') == 3:
+        import importlib.util
+        import types
+        spec = importlib.util.spec_from_file_location('store_runtime', os.path.join(os.path.dirname(__file__), 'runtime.py'))
+        runtime = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runtime)
+        return runtime.load(base, category, types.SimpleNamespace(CATEGORIES=CATEGORIES, Refused=Refused, USES=USES, check_icon=check_icon))
     for name in _visible(os.listdir(base)):
-        if name not in REPO_ONLY + ("build", 'mooboard.json', 'icon.png', 'data'):
+        if name not in REPO_ONLY + ("build", 'mooboard.json', 'icon.png', 'data', WORDS_FILE):
             raise Refused('%s/%s is not part of an app (mooboard.json, icon.png, data/, README.md, LICENSE)' % (where, name))
     for name in ('mooboard.json', 'icon.png'):
         if not os.path.isfile(os.path.join(base, name)):
             raise Refused('%s/%s is missing' % (where, name))
     man = check_manifest(_read(os.path.join(base, 'mooboard.json')), category, folder)
+    words = None
+    if os.path.isfile(os.path.join(base, WORDS_FILE)):
+        if man['uses'] not in WORDS_USES:
+            raise Refused('%s/%s is not part of a %s app' % (where, WORDS_FILE, man['uses']))
+        words = read_words(_read(os.path.join(base, WORDS_FILE)), where)
     icon = _read(os.path.join(base, 'icon.png'))
     check_icon(icon, where + '/icon.png')
     data = read_data(os.path.join(base, 'data'), where) if os.path.isdir(os.path.join(base, 'data')) else {}
@@ -448,4 +493,4 @@ def load_app(root, category, folder, app_dir=None):
     package = write_zip(entries)
     boards = man.get('boards', list(BOARDS))
     check_size(man['id'], len(package), boards)
-    return (man, icon, package, boards, len(entries))
+    return (man, icon, package, boards, len(entries), words)

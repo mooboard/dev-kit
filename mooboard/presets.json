@@ -1,0 +1,49 @@
+{
+  "Lifestyle": [
+    "sunmoon",
+    "word",
+    "quotes",
+    "oktowake",
+    "facts",
+    "jokes",
+    "habits",
+    "chores"
+  ],
+  "Ambiance": [
+    "aquarium",
+    "lava",
+    "aurora",
+    "rain",
+    "fireworks",
+    "nightcity",
+    "snowglobe",
+    "raincode",
+    "vfdstereo"
+  ],
+  "Clock Faces": [],
+  "Games": [
+    "pong",
+    "snake",
+    "blocks",
+    "maze",
+    "breakout",
+    "invaders",
+    "flappy",
+    "cycles",
+    "microracer",
+    "pixelpinball",
+    "microrogue",
+    "spacelander"
+  ],
+  "Tools": [
+    "timer",
+    "pomodoro",
+    "scoreboard",
+    "dice",
+    "intervals",
+    "chessclock",
+    "wheel",
+    "tally"
+  ],
+  "AI": []
+}

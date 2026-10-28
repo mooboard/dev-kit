@@ -8,31 +8,26 @@ import tempfile
 from . import catalog_rules as rules, package
 from .build import Built
 
-CATEGORIES = ("Games", "Ambiance", "ClockFaces", "Tools", "Misc")
-CATEGORY_LABELS = {key: ("Clock Faces" if key == "ClockFaces" else key) for key in CATEGORIES}
-GROUPS = {
-    "Games": ("pong", "snake", "blocks", "maze", "breakout", "invaders", "flappy", "cycles", "microracer", "pixelpinball", "microrogue", "spacelander"),
-    "Ambiance": ("aquarium", "lava", "aurora", "rain", "fireworks", "nightcity", "snowglobe", "raincode", "vfdstereo"),
-    "Tools": ("habits", "timer", "pomodoro", "scoreboard", "dice", "chores", "intervals", "chessclock", "wheel", "tally"),
-    "Misc": ("sunmoon", "word", "quotes", "oktowake", "facts", "jokes"),
-    "ClockFaces": (),
-}
+from pathlib import Path
+CATEGORIES = tuple(json.loads(Path(__file__).with_name("categories.json").read_text(encoding="utf-8")))
+CATEGORY_LABELS = {key: key for key in CATEGORIES}
+GROUPS = {key:tuple(value) for key,value in json.loads(Path(__file__).with_name("presets.json").read_text(encoding="utf-8")).items()}
 RECENT = {"vfdstereo", "microracer", "pixelpinball", "microrogue", "spacelander"}
 SAMPLES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "samples", "live")
 
 
 def category_key(value):
     for key in CATEGORIES:
-        if value.casefold().replace(" ", "") == key.casefold():
+        if value.casefold().replace(" ", "") == key.casefold().replace(" ", ""):
             return key
-    raise package.Refused("Category must be Games, Ambiance, Clock Faces, Tools, or Misc")
+    raise package.Refused("Use a current store category: " + ", ".join(CATEGORIES))
 
 
 def check_category(category, uses):
     if category not in CATEGORIES:
-        raise package.Refused("Use a v3 category: Games, Ambiance, ClockFaces, Tools, or Misc")
-    if category == "ClockFaces":
-        raise package.Refused("Installable clock faces need firmware support before they can be built. A GIF or a renamed renderer is not a live clock face")
+        raise package.Refused("Use a current store category: " + ", ".join(CATEGORIES))
+    if category in ("Clock", "Clock Faces"):
+        raise package.Refused("Create a custom clock with --template clock; renderer presets do not install clock faces")
     if uses not in GROUPS[category]:
         raise package.Refused("%s does not provide a %s app. Choose a renderer listed by python3 -m mooboard renderers" % (uses, CATEGORY_LABELS[category]))
 
@@ -74,7 +69,7 @@ def build(app_dir, out_dir=None):
     manifest = _manifest(app_dir)
     _no_links(app_dir)
     try:
-        man, icon, data, boards, count = rules.load_app("", manifest["category"], manifest["name"], app_dir=app_dir)
+        man, icon, data, boards, count, *_ = rules.load_app("", manifest["category"], manifest["name"], app_dir=app_dir)
     except (rules.Refused, OSError, ValueError, TypeError, RecursionError, UnicodeError, KeyError) as error:
         raise package.Refused(str(error)) from error
     out = os.path.abspath(out_dir or os.path.join(app_dir, "build"))

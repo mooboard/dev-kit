@@ -1,19 +1,18 @@
-# v3 development status
+# v3 validation and release status
 
-This is an unreleased development draft. Release needs the owner's explicit approval after the remaining requirements are met.
+This is the v3 release candidate under active validation. It is not published.
 
-| Capability | Status |
-| --- | --- |
-| Five category definitions and draft rules | Drafted in RULES.md |
-| Build live packages for the 37 prototype catalog renderers | Implemented |
-| Build original presets and supported content lists | Implemented |
-| Keep the existing GIF builder and composer | Available |
-| Install a genuinely new clock face into Clock | Pending firmware and store integration |
-| Write and run a new game, tool, or visual renderer using a public SDK | Pending runtime and extension interface |
-| Preview the real live renderer and exercise input and state locally | Pending |
-| Test a live package directly from the dev kit on a board | Pending a developer install route for live packages |
-| Migrate store categories to Games, Ambiance, Clock Faces, Tools, Misc | Pending coordinated store and firmware changes |
-| Board tests of starter apps across categories | Pending |
-| Owner review of category rules and final release | Pending |
+The kit and compatible firmware must pass these checks together:
 
-These are release requirements, not claims that the current firmware already supports them. A package that reuses an unrelated renderer does not satisfy a new app's implementation. Existing aliases advertised as clocks, network tools, or intelligent apps must be reviewed against their actual runtime behavior during migration.
+- Categories exactly match the store export, including original preset categories.
+- A developer writes new app logic, builds it and previews that same code locally.
+- Clock and Ambiance apps install into their pickers with working previews and settings.
+- Regular apps expose settings, controls, rotation, locking and open/close behavior.
+- API feeds update asynchronously and preserve useful last-good data when a request fails.
+- Credentials remain outside packages and app code.
+- State survives display turns and restart. Disconnect releases held controls.
+- Source edit, build, preview, install, operation, restart and removal pass on a board.
+- Existing picture/GIF apps and the composer keep working.
+- Runtime, package, integration, browser and firmware checks pass, followed by final review.
+
+See [the validation record](VALIDATION.md) for measured results and remaining checks. Building a package alone is not proof of board behavior.

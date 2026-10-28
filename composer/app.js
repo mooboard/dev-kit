@@ -86,7 +86,8 @@
   }
 
   function newApp() {
-    return { name: WORDS.defaultName, id: slug(WORDS.defaultName), author: '', refresh: 3600, duration: 10, settings: [],
+    return { name: WORDS.defaultName, id: slug(WORDS.defaultName), author: '', refresh: 3600, duration: 10, category: '',
+             settings: [],
              layers: [], frames: [{ ms: FRAME_MS, elements: [] }], next: 0 };
   }
 
@@ -542,8 +543,11 @@
     return out;
   }
 
+  // + its category since sdk v3.0 when it has one
   function fieldsOf(app) {
-    return { mooboard: 1, id: app.id, name: app.name, author: app.author, refresh: app.refresh, duration: app.duration };
+    const out = { mooboard: 1, id: app.id, name: app.name, author: app.author, refresh: app.refresh, duration: app.duration };
+    if (app.category) out.category = app.category;
+    return out;
   }
 
   function manifestOf(app, names, fields) {
@@ -812,6 +816,7 @@
     helper.checkLayers(manifest.layers === undefined ? [] : manifest.layers, settings, new Set(byPath.keys()));
     const app = newApp();
     for (const key of ['id', 'name', 'author', 'refresh', 'duration']) if (key in manifest) app[key] = manifest[key];
+    if (helper.CATEGORIES.includes(manifest.category)) app.category = manifest.category;
     app.settings = (manifest.settings || []).map((s) => JSON.parse(JSON.stringify(s)));
     const known = (e) => {
       const strings = ['words', 'name'].filter((key) => e && key in e);

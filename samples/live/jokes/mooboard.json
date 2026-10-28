@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "by": "mooboard",
   "description": "A new joke every day, punchline included.",
-  "category": "Misc",
+  "category": "Lifestyle",
   "uses": "jokes",
   "minFirmware": "0.3.1"
 }

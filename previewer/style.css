@@ -207,3 +207,23 @@ button.app-icon:focus-visible .app-icon__box { outline: 2px solid var(--lit); ou
        font-weight: 600; cursor: pointer; }
 .btn--danger { color: var(--bad); background: transparent; border: 1px solid rgba(255, 46, 136, 0.45); }
 .btn__icon { flex: none; width: 18px; height: 18px; }
+
+/* a clock face from the kit as clock's faces show it + the pencil top right on a face with settings + its settings
+   in a sheet over a dimmed page */
+.faces { display: grid; gap: 12px; max-width: 440px; }
+.face-card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: var(--panel);
+             border: 1px solid var(--rule-soft); border-radius: 14px; }
+.face-card__led { display: block; width: 100%; aspect-ratio: 4 / 1; border-radius: 5px; background: #060709;
+                  image-rendering: pixelated; }
+.face-card__name { text-align: center; font-size: 15px; font-weight: 700; }
+.face-card__pen { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 44px;
+                  padding: 0; color: var(--type); background: transparent; border: 0; cursor: pointer; }
+.face-card__pen svg { width: 30px; height: 30px; padding: 7px; border-radius: 50%; background: var(--sunk);
+                      box-shadow: 0 0 0 1px var(--rule); }
+.face-card__pen:focus-visible { outline: 2px solid var(--lit); outline-offset: -4px; border-radius: 50%; }
+.scrim { position: fixed; inset: 0; z-index: 30; background: rgba(4, 10, 14, 0.5); }
+.sheet { position: fixed; z-index: 31; left: 0; right: 0; bottom: 0; max-height: 82vh; overflow-y: auto;
+         padding: 16px 16px 24px; background: var(--ground); border-radius: 26px 26px 0 0; }
+@media (min-width: 700px) {
+  .sheet { left: 50%; right: auto; width: 520px; margin-left: -260px; bottom: 24px; border-radius: 22px; }
+}

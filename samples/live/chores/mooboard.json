@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "by": "mooboard",
   "description": "Whose turn it is for each chore, tapped done on your phone.",
-  "category": "Tools",
+  "category": "Lifestyle",
   "uses": "chores",
   "minFirmware": "0.3.1",
   "settings": [

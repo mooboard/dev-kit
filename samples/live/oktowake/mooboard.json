@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "by": "mooboard",
   "description": "A sleep light that tells kids when it's time to get up.",
-  "category": "Misc",
+  "category": "Lifestyle",
   "uses": "oktowake",
   "minFirmware": "0.3.1",
   "settings": [

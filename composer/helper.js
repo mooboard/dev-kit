@@ -25,7 +25,9 @@
   const MAX_COMBINATIONS = 512;
   const ICON = 32;
   const FIELDS = ['mooboard', 'id', 'name', 'author', 'refresh', 'duration'];
-  const EXTRAS = ['settings', 'layers'];
+  const EXTRAS = ['category', 'settings', 'layers'];
+  // the app categories since sdk v3.0 as package.CATEGORIES
+  const CATEGORIES = ['Lifestyle', 'Ambiance', 'Clock Faces', 'Games', 'Tools', 'AI'];
   const BUILT = ['frames', 'built'];
   const SETTING_FIELDS = { text: ['max'], color: [], toggle: [], choice: ['options'] };
   const TEXT_LAYER = ['type', 'text', 'size', 'font', 'color', 'x', 'y', 'align', 'show'];
@@ -35,12 +37,14 @@
   const VARIANT_COLORS = ['#77edd7', '#ffb7c9'];
   const ID = /^[a-z0-9-]{3,32}$/;
   // the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
-  // + the catalog renderers and built-in messages app
+  // + the catalog's 50 renderers
   const RESERVED_IDS = ['prayer', 'countdowns', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace',
     'pong', 'snake', 'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits',
     'timer', 'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity',
     'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally',
-    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander', 'messages'];
+    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander', 'aibrief', 'aipet', 'aiscene', 'aiface',
+    'flightglance', 'dinorunner', 'missiledefense', 'minesweeper', 'wordguess', 'waterfall', 'cybercity', 'synthwave',
+    'dune', 'messages', 'sports', 'ambiance', 'lua54'];
   const AUTHOR = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
   const KEY = /^[a-z][a-z0-9_]{0,15}$/;
   const COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -73,6 +77,7 @@
     author: 'author must be a GitHub username',
     refresh: 'refresh must be 300 to 86400 seconds',
     duration: 'duration must be 5 to 60 seconds',
+    category: 'category must match the store: Lifestyle, Ambiance, Clock Faces, Games, Tools, or AI',
     settings: 'settings must be a list of up to 8',
     setting: 'Setting {name} needs a key, a type, a label of up to 24 characters and a default',
     settingTwice: 'Two settings have the key {name}',
@@ -1092,6 +1097,7 @@
     if (typeof manifest.author !== 'string' || !AUTHOR.test(manifest.author)) throw new Refused(WORDS.author);
     if (!isNumber(manifest.refresh, 300, 86400)) throw new Refused(WORDS.refresh);
     if (!isNumber(manifest.duration, 5, 60)) throw new Refused(WORDS.duration);
+    if ('category' in manifest && !CATEGORIES.includes(manifest.category)) throw new Refused(WORDS.category);
     if (built && (!isNumber(manifest.frames, 1, MAX_FRAMES) || typeof manifest.built !== 'string' ||
                   !STAMP.test(manifest.built))) throw new Refused(WORDS.packageBad);
     const settings = checkSettings(manifest.settings === undefined ? [] : manifest.settings);
@@ -1220,6 +1226,7 @@
       return out;
     };
     const out = pick(manifest, FIELDS);
+    if ('category' in manifest) out.category = manifest.category;
     if ('settings' in manifest) out.settings = manifest.settings.map((s) => pick(s, SETTING_ORDER));
     if ('layers' in manifest) out.layers = manifest.layers.map((layer) => pick(layer, LAYER_ORDER));
     return Object.assign(out, pick(manifest, BUILT));
@@ -1284,7 +1291,7 @@
     return date.toISOString().slice(0, 19) + 'Z';
   }
 
-  const api = { W, H, SAFE, SIZES, FONTS, ALIGNS, MAX_FRAMES, WORDS, DAYS, fill, TooLong, Refused, Atlas, layout, ink,
+  const api = { W, H, SAFE, SIZES, FONTS, ALIGNS, MAX_FRAMES, WORDS, DAYS, CATEGORIES, fill, TooLong, Refused, Atlas, layout, ink,
                 drawText, blend, colorOf, Canvas, Screen, clockWords, clockNow, crc32, adler32, encodeGif, encodePng,
                 encodePngRgba, writeZip, readZip, checkManifest, checkSettings, checkLayers, checkFrames, composeLayers, variants,
                 defaultIcon,

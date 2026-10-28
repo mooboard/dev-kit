@@ -28,6 +28,7 @@
     textLength: 'Must be 1 to {max} characters',
     textHidden: 'Must not hold hidden characters',
     thisApp: 'This app',
+    faceSettings: 'Settings',
   };
 
   // ---- the led look as the simulator draws it ----
@@ -553,12 +554,14 @@
   const DATA_CAP = 512 * 1024;              // a store app's data entry
   const FILE_CAP = 8 * 1024;                // the manifest and the icon
   // the store's renderers in the board's order + a store app names one the firmware draws
-  // + the catalog renderers
+  // + the catalog's 50
   const RENDERERS = ['prayer', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace', 'pong', 'snake',
     'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits', 'timer',
     'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity',
     'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally',
-    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander'];
+    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander', 'aibrief', 'aipet', 'aiscene', 'aiface',
+    'flightglance', 'dinorunner', 'missiledefense', 'minesweeper', 'wordguess', 'waterfall', 'cybercity', 'synthwave',
+    'dune'];
   // + a catalog app's settings and controls + the board holds them to its key table
   const FORMAT_2 = ['format', 'id', 'name', 'version', 'by', 'description', 'category', 'uses', 'minFirmware', 'boards',
     'settings', 'controls'];
@@ -671,7 +674,7 @@
       plain(manifest.name, 24) &&
       typeof manifest.version === 'string' && SEMVER.test(manifest.version) && plain(manifest.by, 32) &&
       plain(manifest.description, 160) && typeof manifest.category === 'string' &&
-      /^[A-Z][A-Za-z]{0,23}$/.test(manifest.category) && RENDERERS.includes(manifest.uses) &&
+      manifest.category.length <= 24 && /^[A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*)*$/.test(manifest.category) && RENDERERS.includes(manifest.uses) &&
       (manifest.minFirmware === undefined || (typeof manifest.minFirmware === 'string' && SEMVER.test(manifest.minFirmware))) &&
       Array.isArray(boards) && boards.length > 0 && boards.every((board, i) => ['s3', 'p4'].includes(board) &&
                                                                           (i === 0 || (boards[i - 1] === 's3' && board === 'p4')));
@@ -1021,6 +1024,10 @@
       '..tttttttt..', '..ttt.......', '..t.........', BLANK, BLANK],
       [BLANK, BLANK, '..tttttttt..', '.tttttttttt.', '.twwtddtddt.', '.twwtddtddt.', '.tttttttttt.',
       '..tttttttt..', '..ttt.......', '..t.........', BLANK, BLANK]],
+    ambiance: [[BLANK, '.....o......', '.....oo.....', '....ooo.....', '....oooo....', '...oooooo...', '...oomooo...',
+      '..ooommooo..', '..oommmmoo..', '..oommmmoo..', '...oommoo...', BLANK],
+      [BLANK, '......o.....', '......oo....', '.....ooo....', '....oooo....', '...oooooo...', '...ooomoo...',
+      '..oooommoo..', '..oommmmoo..', '..oomwwmoo..', '...oommoo...', BLANK]],
   };
   // the clock icon's ring about cell 5 5 and its hands along the four clean directions of the first quarter
   const CLOCK_FACE = ['....www.....', '..ww...ww...', '.w.......w..', '.w.......w..', 'w.........w.', 'w.........w.',
@@ -1030,16 +1037,19 @@
     hour: [[[0, -1], [0, -2]], [[0, -1], [1, -2]], [[1, -1]], [[1, 0], [2, -1]]],
   };
   const CLOCK_ANGLES = [0, 26.57, 45, 63.43];
-  // home's built in apps in the board's first order + tv shows only while something feeds it + messages lives in the
-  // apps section below
-  const HOME_APPS = ['media', 'calendar', 'sports', 'lights', 'clock', 'behavior', 'system'];
+  // home's eight built in apps in the board's first order + sports is an app of the apps section
+  const HOME_APPS = ['clock', 'calendar', 'lights', 'ambiance', 'media', 'messages', 'behavior', 'system'];
   const HOME_NAMES = {
     media: 'Media', calendar: 'Calendar', sports: 'Sports',
     lights: 'Lights', clock: 'Clock', behavior: 'Behavior',
-    system: 'System', messages: 'Messages',
+    system: 'Settings', messages: 'Messages', ambiance: 'Ambiance',
   };
   const ICON = 32;            // an app's own icon is 32 by 32
   const ICON_SCALE = 8;       // the web app paints a home icon 8 pixels an led
+  // the kit's clock faces category since sdk v3.0 + the web app's pencil
+  const FACE_CATEGORY = 'Clock Faces';
+  const PEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   // a hand at this many degrees clockwise from 12 snapped to the nearest of the 16 clean directions
   function handCells(hand, degrees) {
@@ -1187,7 +1197,9 @@
                                                                               refuse(WORDS.image.replace('{name}', src))))),
     ]).then(([icon, image, pictures]) => {
       if (icon.width !== ICON || icon.height !== ICON) throw new Error('not an icon');
-      const tile = { name: app.name, icon: { width: ICON, height: ICON, rgb: icon.frames[0].rgb }, store: app.format === 2 };
+      // a kit app in clock faces shows as a face with its pencil
+      const tile = { name: app.name, icon: { width: ICON, height: ICON, rgb: icon.frames[0].rgb }, store: app.format === 2,
+                     face: app.format === 1 && app.manifest.category === FACE_CATEGORY };
       const made = image && { manifest: app.manifest, bytes: app.bytes, files: app.images, frames: image.frames,
                               images: Object.fromEntries(pictures), values: defaultValues(app.manifest), drawn: new Map() };
       return { image: image, tile: tile, app: made };
@@ -1243,6 +1255,8 @@
     const night = byId('night'), low = byId('low'), high = byId('high'), ringToggle = byId('ringToggle');
     const home = byId('home'), grid = byId('apps'), storeApps = byId('storeApps'), devRow = byId('devRow');
     const devApps = byId('devApps'), page = byId('appPage'), title = byId('appTitle'), back = byId('back');
+    const faceRow = byId('faceRow'), faceCards = byId('faceCards'), faceSheet = byId('faceSheet'), scrim = byId('scrim');
+    const faceTitle = byId('faceTitle'), faceFields = byId('faceFields'), faceSave = byId('faceSave');
     const toggles = doc.querySelector('.toggles');
     const devCard = byId('devCard'), storeCard = byId('storeCard'), storeTitle = byId('storeTitle');
     const saveRow = byId('saveRow'), fields = byId('settingsFields');
@@ -1301,6 +1315,8 @@
       paintIconPixels(canvas, tile.icon);
       box.appendChild(canvas);
       const made = cell(tile.name, box, 'button');
+      faceRow.hidden = true;
+      if (tile.face) return showFace();
       made.dataset.app = tile.store ? 'store' : 'developer';
       made.firstChild.type = 'button';
       made.firstChild.addEventListener('click', openPage);
@@ -1358,6 +1374,54 @@
     function change(key, value) {
       app.values = Object.assign({}, app.values, { [key]: value });
       if (tools) showFrames();
+      paintFace();
+    }
+
+    // ---- a clock face from the kit ----
+
+    // its card in clock's faces as the board's web app shows a face + the pencil on a face with settings + a tap on the
+    // pencil opens them in a sheet as the web app does
+    function showFace() {
+      const card = make('div', { class: 'face-card', 'data-app': 'face' }, [
+        make('canvas', { class: 'face-card__led' }), make('span', { class: 'face-card__name', text: tile.name })]);
+      if (app && settingsList(app.manifest).length) {
+        const pen = make('button', { type: 'button', class: 'face-card__pen', 'aria-label': WORDS.faceSettings });
+        pen.innerHTML = PEN;
+        pen.addEventListener('click', openFace);
+        card.appendChild(pen);
+      }
+      faceCards.appendChild(card);
+      faceRow.hidden = false;
+      devRow.hidden = true;
+      page.hidden = true;
+      home.hidden = false;
+      paintFace();
+    }
+
+    // the face's picture at its values as the board above shows it
+    function paintFace() {
+      const led = faceCards.querySelector('.face-card__led');
+      if (!led) return;
+      const frames = app && tools ? drawnFrames() : image && image.frames;
+      if (frames && frames.length) paintIconPixels(led, { width: PANEL_W, height: PANEL_H, rgb: frames[0].rgb });
+    }
+
+    function openFace() {
+      faceTitle.textContent = tile.name;
+      faceFields.textContent = '';
+      settingsList(app.manifest).forEach((s, i) => faceFields.appendChild(settingField(s, i)));
+      faceSheet.hidden = false;
+      scrim.hidden = false;
+      (faceFields.querySelector('input') || faceSave).focus();
+    }
+
+    function closeFace() {
+      if (faceSheet.hidden) return;
+      faceSheet.hidden = true;
+      scrim.hidden = true;
+      faceFields.textContent = '';
+      const pen = faceCards.querySelector('.face-card__pen');
+      if (pen) pen.focus();
     }
 
     function make(tag, props, kids) {
@@ -1579,6 +1643,9 @@
     }
 
     back.addEventListener('click', closePage);
+    faceSave.addEventListener('click', closeFace);
+    scrim.addEventListener('click', closeFace);
+    doc.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeFace(); });
 
     buildGrid();
 

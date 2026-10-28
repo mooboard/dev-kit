@@ -573,7 +573,7 @@
     // ---- the app and its settings ----
 
     const appInputs = { name: byId('app-name'), id: byId('app-id'), author: byId('app-author'), refresh: byId('app-refresh'),
-                        duration: byId('app-duration') };
+                        duration: byId('app-duration'), category: byId('app-category') };
 
     function wholeOr(text) {
       const n = Number(text);
@@ -591,6 +591,7 @@
     live(appInputs.author, (input) => { app.author = input.value.trim(); });
     live(appInputs.refresh, (input) => { app.refresh = wholeOr(input.value); });
     live(appInputs.duration, (input) => { app.duration = wholeOr(input.value); });
+    live(appInputs.category, (input) => { app.category = input.value; });
 
     // ---- the author: github asked once the typing stops, the box is left, a new name comes in or before it goes out ----
 

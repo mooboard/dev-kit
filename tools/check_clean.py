@@ -10,9 +10,9 @@ import sys
 import zlib
 
 MAX_BYTES = 2 * 1024 * 1024
-ALLOWED_TYPES = {".png", ".gif", ".svg", ".gpl", ".txt", ".md", ".ttf", ".html", ".js", ".css", ".yml", ".py"}
-ALLOWED_NAMES = {"LICENSE", ".gitignore", "mooboard.json", "list.json"}
-TEXT_TYPES = {".svg", ".gpl", ".txt", ".md", ".html", ".js", ".css", ".yml", ".py", ".json", ""}
+ALLOWED_TYPES = {".png", ".gif", ".svg", ".gpl", ".txt", ".md", ".ttf", ".html", ".js", ".css", ".yml", ".py", ".lua", ".c", ".cpp", ".h", ".hpp"}
+ALLOWED_NAMES = {"LICENSE", ".gitignore", "mooboard.json", "list.json", "categories.json", "presets.json", "sample-data.json"}
+TEXT_TYPES = {".svg", ".gpl", ".txt", ".md", ".html", ".js", ".css", ".yml", ".py", ".json", ".lua", ".c", ".cpp", ".h", ".hpp", ""}
 SKIP_DIRS = {".git"}
 
 # each pattern is written so this file passes its own check

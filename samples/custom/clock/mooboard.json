@@ -1,0 +1,31 @@
+{
+  "format": 3,
+  "id": "my-clock",
+  "name": "My Clock Face",
+  "version": "1.0.0",
+  "by": "your-github-name",
+  "description": "A live clock using the board local time and display preferences.",
+  "category": "Clock Faces",
+  "runtime": "lua54",
+  "minFirmware": "0.4.1",
+  "boards": [
+    "s3",
+    "p4"
+  ],
+  "settings": [
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Time color",
+      "default": "#77edd7"
+    },
+    {
+      "key": "seconds",
+      "type": "toggle",
+      "label": "Seconds",
+      "default": true
+    }
+  ],
+  "controls": [],
+  "sources": []
+}

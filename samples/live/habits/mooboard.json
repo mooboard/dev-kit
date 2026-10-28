@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "by": "mooboard",
   "description": "Tap a habit on your phone and watch the streak grow.",
-  "category": "Tools",
+  "category": "Lifestyle",
   "uses": "habits",
   "minFirmware": "0.3.1",
   "controls": [

@@ -9,12 +9,12 @@ import zipfile
 
 KIT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, KIT)
-from mooboard import catalog
+from mooboard import catalog, live
 
 
 def main():
     with tempfile.TemporaryDirectory(prefix="mooboard-live-") as work:
-        for uses in catalog.rules.CATALOG_USES:
+        for uses in (name for group in catalog.GROUPS.values() for name in group):
             folder = catalog.create(os.path.join(work, "My " + uses.title()), uses, "octocat")
             first = catalog.build(folder)
             with open(first.package, "rb") as f:
@@ -35,7 +35,22 @@ def main():
                 row = json.load(f)
             if row["sha256"] != hashlib.sha256(before).hexdigest() or row["size"] != len(before):
                 raise ValueError("release digest or size differs: " + uses)
-    print("live apps: %d starters build with repeatable packages" % len(catalog.rules.CATALOG_USES))
+    custom = 0
+    from pathlib import Path
+    for folder in sorted((Path(KIT) / "samples" / "custom").iterdir()):
+        with tempfile.TemporaryDirectory(prefix="mooboard-custom-") as work:
+            one = live.build(folder, work)
+            before = Path(one.package).read_bytes()
+            two = live.build(folder, work)
+            if before != Path(two.package).read_bytes():
+                raise ValueError("custom package changed on a second build")
+            with zipfile.ZipFile(two.package) as archive:
+                if archive.namelist() != ["mooboard.json", "app.lua", "icon.png"] or archive.testzip():
+                    raise ValueError("custom package has incorrect entries")
+                if json.loads(archive.read("mooboard.json"))["format"] != 3:
+                    raise ValueError("custom app format changed")
+            custom += 1
+    print("live apps: %d native presets and %d custom starters build with repeatable packages" % (sum(map(len,catalog.GROUPS.values())), custom))
     return 0
 
 

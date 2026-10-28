@@ -2,9 +2,9 @@
   "format": 2,
   "id": "space-lander",
   "name": "Asteroid Lander",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "by": "mooboard",
-  "description": "Thrust rocket pilot across jagged lunar caverns.",
+  "description": "Land a rocket on the pads between jagged peaks.",
   "category": "Games",
   "uses": "spacelander",
   "minFirmware": "0.3.2",
@@ -12,23 +12,23 @@
     {
       "key": "speed",
       "type": "choice",
-      "label": "Gravity pull",
+      "label": "Gravity",
       "default": "Normal",
       "options": [
-        "Slow",
+        "Low",
         "Normal",
-        "Fast"
+        "High"
       ]
     },
     {
       "key": "planet",
       "type": "choice",
-      "label": "Planet world",
-      "default": "Lunar Grey",
+      "label": "Planet",
+      "default": "Moon",
       "options": [
-        "Lunar Grey",
-        "Mars Red",
-        "Europa Ice"
+        "Moon",
+        "Mars",
+        "Europa"
       ]
     }
   ]

@@ -1,0 +1,37 @@
+{
+  "format": 3,
+  "id": "my-tool",
+  "name": "My Counter",
+  "version": "1.0.0",
+  "by": "your-github-name",
+  "description": "A persistent custom tool with settings and controls.",
+  "category": "Tools",
+  "runtime": "lua54",
+  "minFirmware": "0.4.1",
+  "boards": [
+    "s3",
+    "p4"
+  ],
+  "settings": [
+    {
+      "key": "label",
+      "type": "text",
+      "label": "Label",
+      "default": "MY COUNT",
+      "max": 16
+    }
+  ],
+  "controls": [
+    {
+      "key": "add",
+      "type": "button",
+      "label": "Add one"
+    },
+    {
+      "key": "reset",
+      "type": "button",
+      "label": "Reset"
+    }
+  ],
+  "sources": []
+}

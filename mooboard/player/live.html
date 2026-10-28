@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>mooboard live preview</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui;background:#0e1a22;color:#e9fbf7}body{max-width:900px;margin:0 auto;padding:28px 20px}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}.brand{color:#77edd7;font-weight:750;font-size:22px}h1{font-size:24px;margin:0 0 8px}p{color:#a1b5bd;line-height:1.5}.panel{background:#06090c;border:12px solid #17272f;border-radius:15px;padding:20px;margin:24px 0}img{width:100%;image-rendering:pixelated;display:block;aspect-ratio:4}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.card{background:#17272f;border:1px solid #2d424b;border-radius:16px;padding:20px;margin:16px 0}label{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:10px 0}input,select,button{font:inherit;border:1px solid #3d5660;border-radius:9px;background:#0e1a22;color:inherit;padding:9px 12px}input[type=checkbox]{accent-color:#77edd7;width:20px;height:20px}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #77edd7;outline-offset:3px}.badge{border:1px solid #3d5660;border-radius:30px;padding:6px 12px;color:#77edd7}#error{color:#ff928c;white-space:pre-wrap}h2{font-size:17px;margin:0 0 10px}small{color:#a1b5bd}
+</style>
+<header><span class="brand">mooboard</span><span id="category" class="badge"></span></header>
+<h1 id="name"></h1><p id="description"></p>
+<div class="panel"><img id="frame" alt="Live 128 by 32 LED preview"></div>
+<div class="row"><span id="data-label" class="badge">Sample data</span><label>Live data <input id="live" type="checkbox"></label><button id="pause">Pause</button><small>Source edits reload automatically.</small></div>
+<div id="error" role="alert"></div>
+<div class="card"><h2 id="settings-title">App settings</h2><div id="settings"></div><div id="clock" hidden><label>24-hour time<input id="clock24" type="checkbox"></label><label>Show seconds<input id="seconds" type="checkbox" checked></label></div></div>
+<div class="card" id="lifecycle"><h2>Display</h2><label>Show in rotation<input id="rotation" type="checkbox" checked></label><label>Lock on screen<input id="locked" type="checkbox"></label></div>
+<div class="card" id="controls-card"><h2>Controls</h2><div class="row" id="controls"></div><p id="pad-help">Games can use the arrow keys, Space and Enter. Held keys release when this window loses focus.</p></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);let info,paused=false,held={},gameButtons={},controlRows=[];
+async function post(path,value){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});const got=await r.json();if(!r.ok)throw Error(got.error||'Request failed');$('error').textContent='';return got;}
+function run(work){Promise.resolve().then(work).catch(e=>{$('error').textContent=e.message;});}
+function field(setting,value){const label=document.createElement('label'),name=document.createElement('span');name.textContent=setting.label;label.append(name);let input;if(setting.type==='choice'){input=document.createElement('select');for(const option of setting.options){const node=document.createElement('option');node.value=option;node.textContent=option;input.append(node);}}else{input=document.createElement('input');input.type=setting.type==='toggle'?'checkbox':setting.type==='color'?'color':'text';if(setting.max)input.maxLength=setting.max;}if(setting.type==='toggle')input.checked=value;else input.value=value;input.onchange=()=>run(()=>post('/settings',{[setting.key]:setting.type==='toggle'?input.checked:input.value}));label.append(input);return label;}
+function controlEvent(c,extra={}){return post('/input',{control:c.key,action:c.key,...extra});}
+function controlButton(text,work){const b=document.createElement('button');b.textContent=text;b.onclick=()=>run(work);return b;}
+function renderControls(controls){
+  for(const c of controls){
+    const row=document.createElement('div'),name=document.createElement('span');
+    name.textContent=c.label.replace(/\{([^{}]+)\}/g,(all,key)=>info.settings[key]??all);row.append(name);
+    const value=document.createElement('span');
+    if(c.type==='button')row.append(controlButton(c.label,()=>controlEvent(c,c.arg===undefined?{}:{arg:c.arg})));
+    else if(c.type==='stepper')row.append(controlButton('−',()=>controlEvent(c,{by:-1})),value,controlButton('+',()=>controlEvent(c,{by:1})));
+    else if(c.type==='readout')row.append(value);
+    else {
+      const items=document.createElement('div'),text=document.createElement('input');text.maxLength=c.chars;text.setAttribute('aria-label',c.add);
+      row.append(items,text,controlButton(c.add,async()=>{if(text.value.trim()){await controlEvent(c,{action:c.key+'-add',text:text.value.trim()});text.value='';}}));
+      value.items=items;value.input=text;
+    }
+    controlRows.push({c,value});$('controls').append(row);
+  }
+}
+async function updateState(){
+  try {
+    const state=await(await fetch('/state')).json();
+    for(const {c,value} of controlRows){
+      const v=state[c.key];
+      if(c.type==='list'){
+        value.items.textContent='';value.input.disabled=(v||[]).length>=c.max;
+        for(const [item,entry] of (Array.isArray(v)?v:[]).entries()){
+          const row=document.createElement('div'),label=document.createElement('span');label.textContent=entry.name||'';
+          row.append(label,controlButton(entry.done?'Done':'Mark done',()=>controlEvent(c,{action:c.key+'-tap',item})),controlButton('Remove',()=>controlEvent(c,{action:c.key+'-remove',item})));value.items.append(row);
+        }
+      }else if(c.type!=='button')value.textContent=v&&typeof v==='object'?v.text??'':v??'';
+    }
+  }catch(e){$('error').textContent=e.message;}
+  setTimeout(updateState,300);
+}
+async function boot(){
+  info=await(await fetch('/info')).json();const m=info.manifest;
+  $('name').textContent=m.name;$('description').textContent=m.description;$('category').textContent=m.category;
+  $('settings-title').textContent=info.role==='clock'?'Face settings':info.role==='ambiance'?'Ambiance settings':'App settings';
+  $('clock').hidden=info.role!=='clock';$('lifecycle').hidden=info.role!=='app';$('live').checked=info.live;
+  $('data-label').textContent=info.live?'Live data':'Sample data';
+  for(const setting of m.settings||[])$('settings').append(field(setting,info.settings[setting.key]));
+  renderControls(m.controls||[]);$('controls-card').hidden=!(m.controls||[]).length&&m.category!=='Games';$('pad-help').hidden=m.category!=='Games';
+  if((m.controls||[]).length)updateState();
+}
+$('live').onchange=()=>run(async()=>{await post('/mode',{live:$('live').checked});$('data-label').textContent=$('live').checked?'Live data':'Sample data';});
+$('pause').onclick=()=>run(async()=>{paused=!paused;await post('/mode',{active:!paused});$('pause').textContent=paused?'Resume':'Pause';});
+for(const key of ['clock24','seconds','rotation','locked'])$(key).onchange=()=>run(async()=>{await post('/mode',{[key]:$(key).checked});if(key==='locked'&&$('locked').checked)$('rotation').checked=false;if(key==='rotation'&&$('rotation').checked)$('locked').checked=false;});
+const keys={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',' ':'a',Enter:'a',z:'a',x:'b'};
+function sendButtons(){return post('/input',{buttons:{...held,...gameButtons}});}
+function release(){held={};gameButtons={};run(sendButtons);}
+addEventListener('keydown',e=>{if(!keys[e.key]||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.metaKey||e.ctrlKey)return;e.preventDefault();if(!held[keys[e.key]]){held[keys[e.key]]=true;run(sendButtons);}});
+addEventListener('keyup',e=>{if(keys[e.key]){delete held[keys[e.key]];run(sendButtons);}});addEventListener('blur',release);document.addEventListener('visibilitychange',()=>{if(document.hidden)release();});
+let gameConnected=false,lastGame='';
+setInterval(()=>{
+  if(document.hidden)return;
+  const pads=navigator.getGamepads?navigator.getGamepads():[];const pad=Array.from(pads).find(Boolean);gameButtons={};
+  if(pad){const pressed=i=>!!pad.buttons[i]&&(pad.buttons[i].pressed||pad.buttons[i].value>0.5);
+    for(const [key,value] of Object.entries({up:pressed(12)||pad.axes[1]<-0.5,down:pressed(13)||pad.axes[1]>0.5,left:pressed(14)||pad.axes[0]<-0.5,right:pressed(15)||pad.axes[0]>0.5,a:pressed(0),b:pressed(1)}))if(value)gameButtons[key]=true;
+  }
+  const current=JSON.stringify(gameButtons);if(current!==lastGame||gameConnected!==!!pad){lastGame=current;gameConnected=!!pad;run(sendButtons);}
+},100);
+async function tick(){if(!paused&&!document.hidden){try{const response=await fetch('/frame?t='+Date.now());if(!response.ok)throw Error((await response.json()).error);const url=URL.createObjectURL(await response.blob());const old=$('frame').src;$('frame').src=url;if(old.startsWith('blob:'))URL.revokeObjectURL(old);}catch(e){$('error').textContent=e.message;}}setTimeout(tick,33);}
+run(async()=>{await boot();tick();});
+</script></html>

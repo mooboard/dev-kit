@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "by": "mooboard",
   "description": "A new word and what it means, every day.",
-  "category": "Misc",
+  "category": "Lifestyle",
   "uses": "word",
   "minFirmware": "0.3.1"
 }

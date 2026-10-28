@@ -27,7 +27,9 @@ MAX_DEPTH = 4
 MAX_COMBINATIONS = 512
 ICON = 32
 FIELDS = ("mooboard", "id", "name", "author", "refresh", "duration")
-EXTRAS = ("settings", "layers")
+EXTRAS = ("category", "settings", "layers")
+# the app categories since sdk v3.0 + a clock face's settings show behind the pencil on its face
+CATEGORIES = ("Lifestyle", "Ambiance", "Clock Faces", "Games", "Tools", "AI")
 BUILT = ("frames", "built")
 REQUIRED = ("mooboard.json", "app.gif", "icon.png")
 SETTING_FIELDS = {"text": {"max"}, "color": set(), "toggle": set(), "choice": {"options"}}
@@ -38,13 +40,14 @@ IMAGE_LAYER = {"type", "src", "x", "y", "show"}
 VARIANT_COLORS = ("#77edd7", "#ffb7c9")
 ID = re.compile(r"[a-z0-9-]{3,32}")
 # the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
-# + the catalog renderers and built-in messages app
+# + the catalog's 50 renderers
 RESERVED_IDS = ("prayer", "countdowns", "countdown", "sketch", "life", "plasma", "starfield", "fireplace", "pong",
                 "snake", "blocks", "maze", "aquarium", "lava", "aurora", "rain", "sunmoon", "word", "quotes",
                 "habits", "timer", "pomodoro", "scoreboard", "dice", "breakout", "invaders", "flappy", "cycles",
                 "fireworks", "nightcity", "snowglobe", "raincode", "oktowake", "chores", "facts", "jokes",
                 "intervals", "chessclock", "wheel", "tally", "vfdstereo", "microracer", "pixelpinball", "microrogue",
-                "spacelander", "messages")
+                "spacelander", "aibrief", "aipet", "aiscene", "aiface", "flightglance", "dinorunner",
+                "missiledefense", "minesweeper", "wordguess", "waterfall", "cybercity", "synthwave", "dune", "messages", "sports", "ambiance", "lua54")
 AUTHOR = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}")
 KEY = re.compile(r"[a-z][a-z0-9_]{0,15}")
 COLOR = re.compile(r"#[0-9a-fA-F]{6}")
@@ -73,6 +76,7 @@ NAME_LINK = "name can’t be a link"
 AUTHOR_WORDS = "author must be a GitHub username"
 REFRESH = "refresh must be 300 to 86400 seconds"
 DURATION = "duration must be 5 to 60 seconds"
+CATEGORY = "category must match the store: Lifestyle, Ambiance, Clock Faces, Games, Tools, or AI"
 SETTINGS = "settings must be a list of up to 8"
 SETTING = "Setting {name} needs a key, a type, a label of up to 24 characters and a default"
 SETTING_TWICE = "Two settings have the key {name}"
@@ -332,6 +336,8 @@ def check_manifest(data, built=False, images=None):
         raise Refused(REFRESH)
     if not _number(manifest["duration"], 5, 60):
         raise Refused(DURATION)
+    if "category" in manifest and manifest["category"] not in CATEGORIES:
+        raise Refused(CATEGORY)
     if built and (not _number(manifest["frames"], 1, MAX_FRAMES) or not isinstance(manifest["built"], str)
                   or not STAMP.fullmatch(manifest["built"])):
         raise Refused(PACKAGE_BAD)
@@ -485,6 +491,8 @@ def variants(app):
 
 def canonical(manifest):
     out = {key: manifest[key] for key in FIELDS if key in manifest}
+    if "category" in manifest:
+        out["category"] = manifest["category"]
     if "settings" in manifest:
         out["settings"] = [{key: s[key] for key in SETTING_ORDER if key in s} for s in manifest["settings"]]
     if "layers" in manifest:

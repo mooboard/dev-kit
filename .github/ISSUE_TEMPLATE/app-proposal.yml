@@ -7,11 +7,12 @@ body:
     attributes:
       label: "Category"
       options:
-        - Games
+        - Lifestyle
         - Ambiance
         - Clock Faces
+        - Games
         - Tools
-        - Misc
+        - AI
     validations:
       required: true
   - type: input
