@@ -16,6 +16,11 @@ class Runtime {
   static constexpr size_t frameBytes = width * height * 3;
   static constexpr size_t memoryLimit = 512 * 1024;
   static constexpr size_t sourceLimit = 64 * 1024;
+  // the longest string an app holds + the bytes made or copied and the bytes decoded for a unit of work
+  static constexpr size_t stringLimit = 1024;
+  static constexpr size_t bytesPerWork = 16, decodedPerWork = 4;
+  // the board parses each load on a stack of its own in psram, deep enough for the parser's limit
+  static constexpr size_t parseStackBytes = 24 * 1024;
   Runtime();
   ~Runtime();
   Runtime(const Runtime&) = delete;
@@ -29,6 +34,10 @@ class Runtime {
   const uint8_t* pixels() const { return pixels_; }
   size_t memoryUsed() const { return used_; }
   bool spend(size_t work) { if(work>work_)return false;work_-=work;return true; }
+  // spend while a callback runs + false once it is over budget, and the callback ends with no more charges
+  bool charge(size_t work) { if(!charging_||spend(work))return true;charging_=false;return false; }
+  void stopCharging() { charging_=false; }
+  void overBudget() { overrun_="app exceeded its work budget"; }
   void pixel(int x, int y, uint32_t color, uint8_t alpha = 255);
   void clear(uint32_t color);
   void text(const char* words, size_t length, int x, int y, int size, uint32_t color);
@@ -37,10 +46,14 @@ class Runtime {
   static void* allocate(void* user, void* ptr, size_t oldSize, size_t newSize);
   static void budget(lua_State* state, lua_Debug* debug);
   bool checked(int status);
+  int parse(const char* source, size_t size);
+  bool run(int arguments);
   lua_State* lua_ = nullptr;
   size_t used_ = 0;
   int remaining_ = 0, app_ = -2;
   size_t work_ = 32768;
+  bool charging_ = false;
+  const char* overrun_ = nullptr;
   uint8_t pixels_[frameBytes] = {};
   std::string error_;
 };

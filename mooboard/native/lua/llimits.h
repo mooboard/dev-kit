@@ -245,9 +245,31 @@ typedef l_uint32 Instruction;
 ** and other features implemented through recursion in C. (Value must
 ** fit in a 16-bit unsigned integer. It must also be compatible with
 ** the size of the C stack.)
+** mooboard host (c3772): the C calls of a running app that run lua
+** again (ldo.c ccall). A callback runs at 1 and a table.sort comparator
+** or a lua iterator under it at 2, the deepest; one under that is the
+** app's "C stack overflow". Measured on the board with the stack probe
+** app (test/fixtures/runtime/stack-probe): a comparator level is 528
+** bytes and an iterator's 240, and one comparator with the library's
+** deepest calls under it 3,316 of the render task's 5,792 free.
 */
 #if !defined(LUAI_MAXCCALLS)
-#define LUAI_MAXCCALLS          32
+#define LUAI_MAXCCALLS          3
+#endif
+
+/*
+** mooboard host (c3772): the parser's syntactical levels keep their
+** limit of 32 apart from LUAI_MAXCCALLS (lparser.c enterlevel), as a
+** source nests deeper than a running app's C calls. Only the slow task
+** loads an app (its install, its turn on the panel, a portal preview).
+** c3790: a statement, a subexpression, and each name of a multiple
+** assignment past the first is a level, and a level costs up to 480
+** bytes of the board's stack (f{[f{[...]=1}]=1}), so the board parses on
+** a stack of its own in psram (Runtime::parseStackBytes), sized by
+** tools/stack_depth.py from this limit and the image's worst cycle.
+*/
+#if !defined(LUAI_MAXPARSERLEVELS)
+#define LUAI_MAXPARSERLEVELS    32
 #endif
 
 

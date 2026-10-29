@@ -498,7 +498,9 @@ static void adjust_assign (LexState *ls, int nvars, int nexps, expdesc *e) {
 }
 
 
-#define enterlevel(ls)  luaE_incCstack(ls->L)
+/* mooboard host (c3772): the parser's own limit, LUAI_MAXPARSERLEVELS */
+#define enterlevel(ls)  { lua_State *L_ = (ls)->L; L_->nCcalls++; \
+  checklimit((ls)->fs, getCcalls(L_), LUAI_MAXPARSERLEVELS, "syntax levels"); }
 
 
 #define leavelevel(ls) ((ls)->L->nCcalls--)

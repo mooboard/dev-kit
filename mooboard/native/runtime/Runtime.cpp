@@ -13,6 +13,9 @@ extern "C" {
 #include "lualib.h"
 }
 #ifdef ESP_PLATFORM
+#include <atomic>
+#include <esp32-hal-log.h>
+#include <esp_expression_with_stack.h>
 #include <esp_heap_caps.h>
 #endif
 
@@ -44,63 +47,13 @@ class HostJsonAllocator final : public ArduinoJson::Allocator {
 };
 ArduinoJson::Allocator* hostJsonAllocator(){static HostJsonAllocator allocator;return &allocator;}
 Runtime* owner(lua_State* l) { return *static_cast<Runtime**>(lua_getextraspace(l)); }
-void work(lua_State* l,size_t amount){if(!owner(l)->spend(amount))luaL_error(l,"app exceeded its drawing budget");}
-void nativeWork(lua_State* l,uint64_t amount) {
-  if(amount>32768||!owner(l)->spend(size_t(amount)))luaL_error(l,"app exceeded its native work budget");
-}
-uint64_t rangeLength(lua_Integer first,lua_Integer last) {
-  if(first>last)return 0;
-  const uint64_t count=uint64_t(last)-uint64_t(first)+1;
-  return count?count:UINT64_MAX;
-}
-int nativeCall(lua_State* l) {
-  const char* name=lua_tostring(l,lua_upvalueindex(2));
-  const int arguments=lua_gettop(l);
-  nativeWork(l,1);
-  if(std::strcmp(name,"table.sort")==0&&lua_istable(l,1)) {
-    const size_t n=lua_rawlen(l,1);size_t longest=0;
-    if(n>181)nativeWork(l,32769);
-    for(size_t i=1;i<=n;++i){lua_rawgeti(l,1,lua_Integer(i));if(lua_type(l,-1)==LUA_TSTRING)longest=std::max(longest,size_t(lua_rawlen(l,-1)));lua_pop(l,1);}
-    if(n>1)nativeWork(l,uint64_t(n)*n*(longest+1));
-  }else if(std::strcmp(name,"table.concat")==0&&lua_istable(l,1)) {
-    const lua_Integer first=luaL_optinteger(l,3,1),last=luaL_optinteger(l,4,lua_Integer(lua_rawlen(l,1)));
-    const uint64_t count=rangeLength(first,last);nativeWork(l,count);
-    size_t separator=0;luaL_optlstring(l,2,"",&separator);
-    if(count>1)nativeWork(l,(count-1)*separator);
-    for(uint64_t i=0;i<count;++i){lua_rawgeti(l,1,first+lua_Integer(i));size_t bytes=0;lua_tolstring(l,-1,&bytes);nativeWork(l,bytes);lua_pop(l,1);}
-  }else if(std::strcmp(name,"table.unpack")==0&&lua_istable(l,1)) {
-    nativeWork(l,rangeLength(luaL_optinteger(l,2,1),luaL_optinteger(l,3,lua_Integer(lua_rawlen(l,1)))));
-  }else if((std::strcmp(name,"table.insert")==0||std::strcmp(name,"table.remove")==0)&&lua_istable(l,1)) {
-    nativeWork(l,lua_rawlen(l,1));
-  }else if(std::strcmp(name,"string.len")==0||std::strcmp(name,"utf8.codes")==0||std::strcmp(name,"tostring")==0) {
-    // These return a length, an iterator or an existing string without scanning it.
-  }else if(std::strcmp(name,"string.byte")==0||std::strcmp(name,"string.sub")==0) {
-    size_t bytes=0;luaL_checklstring(l,1,&bytes);
-    lua_Integer first=luaL_optinteger(l,2,1),last=luaL_optinteger(l,3,std::strcmp(name,"string.sub")==0?-1:first);
-    if(first<0)first+=lua_Integer(bytes)+1;if(last<0)last+=lua_Integer(bytes)+1;
-    first=std::max<lua_Integer>(1,std::min<lua_Integer>(first,lua_Integer(bytes)+1));
-    last=std::max<lua_Integer>(0,std::min<lua_Integer>(last,lua_Integer(bytes)));
-    nativeWork(l,rangeLength(first,last));
-  }else if(std::strcmp(name,"string.rep")==0) {
-    size_t bytes=0,separator=0;luaL_checklstring(l,1,&bytes);luaL_optlstring(l,3,"",&separator);
-    const lua_Integer count=luaL_checkinteger(l,2);
-    if(count>0){if(count>32768||bytes+separator>32768)nativeWork(l,32769);nativeWork(l,uint64_t(count)*(bytes+separator+1));}
-  }else {
-    nativeWork(l,uint64_t(arguments));
-    for(int i=1;i<=arguments;++i)if(lua_type(l,i)==LUA_TSTRING)nativeWork(l,lua_rawlen(l,i));
-    // Lua's numeric formatting permits field widths and precisions up to 99.
-    if(std::strcmp(name,"string.format")==0)nativeWork(l,uint64_t(arguments)*128);
-  }
-  lua_pushvalue(l,lua_upvalueindex(1));lua_insert(l,1);
-  lua_call(l,arguments,LUA_MULTRET);return lua_gettop(l);
-}
-void wrapLibrary(lua_State* l,const char* prefix,std::initializer_list<const char*> names) {
-  for(const char* name:names){
-    lua_getfield(l,-1,name);
-    if(!lua_isfunction(l,-1)){lua_pop(l,1);continue;}
-    lua_pushfstring(l,"%s.%s",prefix,name);lua_pushcclosure(l,nativeCall,2);lua_setfield(l,-2,name);
-  }
-}
+// the runtime whose callback this task runs + lua converts strings to numbers where no state is at hand
+thread_local Runtime* tRunning = nullptr;
+// a parse and its status for parseHere, which takes no arguments as it runs on the parse's own stack
+struct Parse {lua_State* l;const char* source;size_t size;int status;};
+thread_local Parse* tParse = nullptr;
+void parseHere(){Parse& p=*tParse;p.status=luaL_loadbufferx(p.l,p.source,p.size,"app.lua","t");}
+void work(lua_State* l,size_t amount){if(!owner(l)->spend(amount)){owner(l)->stopCharging();luaL_error(l,"app exceeded its drawing budget");}}
 uint32_t color(lua_State* l, int at, uint32_t fallback = 0xffffff) {
   if (lua_isnoneornil(l, at)) return fallback;
   if (lua_isinteger(l, at)) return uint32_t(lua_tointeger(l, at)) & 0xffffff;
@@ -153,19 +106,117 @@ int drawText(lua_State* l) {
   work(l,n*size_t(size)*8);
   owner(l)->text(s,n,x,y,size,color(l,5)); return 0;
 }
+// the library's c functions run outside the instruction count + each guard charges its bytes or elements first and
+// then runs the library's own function, its upvalue, in its own call so an error names the function
+size_t bytesWork(size_t bytes){return (bytes+Runtime::bytesPerWork-1)/Runtime::bytesPerWork;}
+size_t decodeWork(size_t bytes){return (bytes+Runtime::decodedPerWork-1)/Runtime::decodedPerWork;}
+void charge(lua_State* l,size_t amount){if(!owner(l)->charge(amount))luaL_error(l,"app exceeded its work budget");}
+void tooLong(lua_State* l){owner(l)->stopCharging();luaL_error(l,"app made a string longer than %d bytes",int(Runtime::stringLimit));}
+int library(lua_State* l){return lua_tocfunction(l,lua_upvalueindex(1))(l);}
+// lstrlib's posrelatI and getendpos + a range's first and last byte
+lua_Integer firstAt(lua_Integer pos,size_t len){return pos>0?pos:pos==0?1:pos<-lua_Integer(len)?1:lua_Integer(len)+pos+1;}
+lua_Integer lastAt(lua_Integer pos,size_t len){return pos>lua_Integer(len)?lua_Integer(len):pos>=0?pos:pos<-lua_Integer(len)?0:lua_Integer(len)+pos+1;}
+size_t span(lua_Integer first,lua_Integer last){
+  return first>last?0:size_t(std::min<lua_Unsigned>(lua_Unsigned(last)-lua_Unsigned(first),lua_Unsigned(1)<<40))+1;
+}
+int guardRep(lua_State* l){
+  size_t len=0,sep=0;luaL_checklstring(l,1,&len);const lua_Integer n=luaL_checkinteger(l,2);luaL_optlstring(l,3,"",&sep);
+  if(n<=0||len+sep==0){lua_pushliteral(l,"");return 1;}   // no copies + the library's would count to n
+  if(n>lua_Integer(Runtime::stringLimit)+1)tooLong(l);
+  const size_t total=size_t(n)*len+size_t(n-1)*sep;
+  if(total>Runtime::stringLimit)tooLong(l);
+  charge(l,bytesWork(total)+1);return library(l);
+}
+int guardByte(lua_State* l){
+  size_t len=0;luaL_checklstring(l,1,&len);const lua_Integer first=luaL_optinteger(l,2,1);
+  charge(l,span(firstAt(first,len),lastAt(luaL_optinteger(l,3,first),len))+1);return library(l);
+}
+int guardFormat(lua_State* l){size_t len=0;luaL_checklstring(l,1,&len);charge(l,decodeWork(len)+size_t(lua_gettop(l)));return library(l);}
+// a function that decodes or converts each byte of its string
+int guardScan(lua_State* l){size_t len=0;luaL_checklstring(l,1,&len);charge(l,decodeWork(len)+1);return library(l);}
+size_t tableLength(lua_State* l){luaL_checktype(l,1,LUA_TTABLE);return lua_rawlen(l,1);}
+int guardConcat(lua_State* l){
+  const size_t n=tableLength(l);const lua_Integer first=luaL_optinteger(l,3,1),last=luaL_optinteger(l,4,lua_Integer(n));
+  charge(l,span(first,last)+1);return library(l);
+}
+int guardInsert(lua_State* l){
+  const size_t n=tableLength(l);
+  const lua_Integer at=lua_gettop(l)>=3?luaL_checkinteger(l,2):lua_Integer(n)+1;
+  charge(l,(at>=1&&at<=lua_Integer(n)?size_t(lua_Integer(n)-at):0)+1);return library(l);
+}
+int guardRemove(lua_State* l){
+  const size_t n=tableLength(l);const lua_Integer at=luaL_optinteger(l,2,lua_Integer(n));
+  charge(l,(at>=1&&at<=lua_Integer(n)?size_t(lua_Integer(n)-at):0)+1);return library(l);
+}
+int guardUnpack(lua_State* l){
+  const lua_Integer first=luaL_optinteger(l,2,1);
+  const lua_Integer last=lua_isnoneornil(l,3)?lua_Integer(tableLength(l)):luaL_checkinteger(l,3);
+  charge(l,span(first,last)+1);return library(l);
+}
+// n log n comparisons + a string compares its bytes so the longest one weighs each
+int guardSort(lua_State* l){
+  const size_t n=tableLength(l);charge(l,n+1);
+  size_t longest=0;
+  for(size_t i=1;i<=n;++i){if(lua_rawgeti(l,1,lua_Integer(i))==LUA_TSTRING)longest=std::max(longest,size_t(lua_rawlen(l,-1)));lua_pop(l,1);}
+  size_t depth=1;for(size_t m=n;m>1;m>>=1)++depth;
+  charge(l,n*depth*(1+bytesWork(longest)));return library(l);
+}
+int guardCodepoint(lua_State* l){
+  size_t len=0;luaL_checklstring(l,1,&len);
+  const auto at=[len](lua_Integer pos){return pos>=0?pos:size_t(0)-size_t(pos)>len?0:lua_Integer(len)+pos+1;};
+  const lua_Integer first=at(luaL_optinteger(l,2,1));
+  const size_t count=span(first,at(luaL_optinteger(l,3,first)));charge(l,count+decodeWork(count)+1);return library(l);
+}
+// lutf8lib's iterator skips every continuation byte after a code + a code has five at most
+int guardCodesStep(lua_State* l){
+  size_t len=0;const char* s=luaL_checklstring(l,1,&len);const lua_Integer at=lua_tointeger(l,2);
+  if(at>=0&&size_t(at)<len){
+    size_t run=0;while(size_t(at)+run<len&&run<6&&(uint8_t(s[size_t(at)+run])&0xc0)==0x80)++run;
+    if(run>5)return luaL_error(l,"invalid UTF-8 code");
+  }
+  return library(l);
+}
+int guardCodes(lua_State* l){
+  const int n=library(l),first=lua_gettop(l)-n+1;
+  if(n>=1&&lua_iscfunction(l,first)){lua_pushvalue(l,first);lua_pushcclosure(l,guardCodesStep,1);lua_replace(l,first);}
+  return n;
+}
+// the string library's arithmetic metamethods convert their string operands
+int guardArith(lua_State* l){
+  for(int i=1;i<=2;++i)if(lua_type(l,i)==LUA_TSTRING)charge(l,decodeWork(lua_rawlen(l,i))+1);
+  return library(l);
+}
+int guardToNumber(lua_State* l){if(lua_type(l,1)==LUA_TSTRING)charge(l,decodeWork(lua_rawlen(l,1))+1);return library(l);}
+// the library function `name` in the table on top behind `guard` + nil drops it
+void guard(lua_State* l,const char* name,lua_CFunction g){
+  lua_getfield(l,-1,name);
+  if(g){lua_pushcclosure(l,g,1);}else{lua_pop(l,1);lua_pushnil(l);}
+  lua_setfield(l,-2,name);
+}
 int bootstrap(lua_State* l) {
   luaL_requiref(l,"_G",luaopen_base,1); lua_pop(l,1);
   for(const char* name:{"dofile","load","loadfile","collectgarbage","print","warn","pcall","xpcall","getmetatable","setmetatable"}) {
     lua_pushnil(l);lua_setglobal(l,name);
   }
+  lua_pushglobaltable(l);guard(l,"tonumber",guardToNumber);lua_pop(l,1);
   luaL_requiref(l,LUA_MATHLIBNAME,luaopen_math,1);lua_pop(l,1);
   luaL_requiref(l,LUA_STRLIBNAME,luaopen_string,1);
-  for(const char* name:{"dump","find","match","gmatch","gsub"}) {lua_pushnil(l);lua_setfield(l,-2,name);}
-  wrapLibrary(l,"string",{"byte","char","format","len","lower","pack","packsize","rep","reverse","sub","unpack","upper"});lua_pop(l,1);
-  luaL_requiref(l,LUA_TABLIBNAME,luaopen_table,1);lua_pushnil(l);lua_setfield(l,-2,"move");
-  wrapLibrary(l,"table",{"concat","insert","remove","sort","unpack"});lua_pop(l,1);
-  luaL_requiref(l,LUA_UTF8LIBNAME,luaopen_utf8,1);wrapLibrary(l,"utf8",{"char","codepoint","codes","len","offset"});lua_pop(l,1);
-  for(const char* name:{"tonumber","tostring"}){lua_getglobal(l,name);lua_pushstring(l,name);lua_pushcclosure(l,nativeCall,2);lua_setglobal(l,name);}
+  lua_pushliteral(l,"");
+  if(lua_getmetatable(l,-1)){
+    for(const char* name:{"__add","__sub","__mul","__mod","__pow","__div","__idiv","__unm"})guard(l,name,guardArith);
+    lua_pop(l,1);
+  }
+  lua_pop(l,1);
+  for(const char* name:{"dump","find","match","gmatch","gsub","pack","packsize","unpack"})guard(l,name,nullptr);
+  guard(l,"rep",guardRep);guard(l,"byte",guardByte);guard(l,"format",guardFormat);
+  for(const char* name:{"lower","upper","reverse"})guard(l,name,guardScan);
+  lua_pop(l,1);
+  luaL_requiref(l,LUA_TABLIBNAME,luaopen_table,1);guard(l,"move",nullptr);
+  guard(l,"concat",guardConcat);guard(l,"insert",guardInsert);guard(l,"remove",guardRemove);
+  guard(l,"unpack",guardUnpack);guard(l,"sort",guardSort);lua_pop(l,1);
+  luaL_requiref(l,LUA_UTF8LIBNAME,luaopen_utf8,1);
+  guard(l,"len",guardScan);guard(l,"offset",guardScan);guard(l,"codepoint",guardCodepoint);guard(l,"codes",guardCodes);
+  lua_pop(l,1);
   const luaL_Reg functions[]={{"clear",drawClear},{"pixel",drawPixel},{"line",drawLine},{"rect",drawRect},{"circle",drawCircle},{"text",drawText},{nullptr,nullptr}};
   lua_newtable(l);luaL_setfuncs(l,functions,0);
   lua_pushinteger(l,128);lua_setfield(l,-2,"width");lua_pushinteger(l,32);lua_setfield(l,-2,"height");lua_setglobal(l,"screen");
@@ -182,7 +233,9 @@ void pushJson(lua_State* l, ArduinoJson::JsonVariantConst v, int depth=0) {
     lua_createtable(l,int(v.size()),0);int i=1;
     for(JsonVariantConst p:v.as<JsonArrayConst>()){pushJson(l,p,depth+1);lua_rawseti(l,-2,i++);}
   }else if(v.is<const char*>()) {
-    const JsonString s=v.as<JsonString>();lua_pushlstring(l,s.c_str(),s.size());
+    const JsonString s=v.as<JsonString>();size_t n=s.size();
+    if(n>Runtime::stringLimit){n=Runtime::stringLimit;while(n>0&&(uint8_t(s.c_str()[n])&0xc0)==0x80)--n;}
+    lua_pushlstring(l,s.c_str(),n);
   }else if(v.is<bool>())lua_pushboolean(l,v.as<bool>());
   else if(v.is<int64_t>())lua_pushinteger(l,v.as<int64_t>());
   else if(v.is<double>())lua_pushnumber(l,v.as<double>());
@@ -239,6 +292,10 @@ void* Runtime::allocate(void* user,void* ptr,size_t oldSize,size_t newSize) {
 #endif
     self->used_-=old;}return nullptr;}
   if(newSize>memoryLimit||self->used_-old>memoryLimit-newSize)return nullptr;
+  // a new string is its header and bytes + the cap holds for every string so a compare or hash stays short
+  if(!ptr&&oldSize==LUA_TSTRING&&newSize>stringLimit+2*sizeof(void*)+9){self->overrun_="app made a string longer than 1024 bytes";return nullptr;}
+  // growth is charged while a callback runs + a refused block stays refused when lua collects and asks again
+  if(self->charging_&&newSize>old&&!self->spend(bytesWork(newSize-old))){self->overrun_="app exceeded its work budget";return nullptr;}
 #ifdef ESP_PLATFORM
   void* next=heap_caps_realloc(ptr,newSize,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
 #else
@@ -255,17 +312,49 @@ Runtime::Runtime() {
 Runtime::~Runtime(){if(lua_)lua_close(lua_);}
 void Runtime::budget(lua_State* l,lua_Debug*) {
   auto* self=owner(l);self->remaining_-=1000;
-  if(self->remaining_<=0)luaL_error(l,"app exceeded its instruction budget");
+  if(self->remaining_<=0){self->charging_=false;luaL_error(l,"app exceeded its instruction budget");}
 }
 bool Runtime::checked(int status) {
   if(status==LUA_OK){error_.clear();return true;}
-  const char* why=lua_tostring(lua_,-1);error_=why?why:"app ran out of memory";lua_pop(lua_,1);return false;
+  const char* why=lua_tostring(lua_,-1);error_=overrun_?overrun_:why?why:"app ran out of memory";
+  lua_pop(lua_,1);return false;
+}
+// an app callback under its budgets + charges only while it runs
+bool Runtime::run(int arguments) {
+  overrun_=nullptr;charging_=true;Runtime* outer=tRunning;tRunning=this;
+  const int status=lua_pcall(lua_,arguments,LUA_MULTRET,0);charging_=false;tRunning=outer;
+  return checked(status);
+}
+// lua_load's status, or -1 when the parse's stack could not be had + the board parses on a stack of its own in psram,
+// deep enough for the parser's limit, and this task waits for it + the parse reads memory only, never flash
+int Runtime::parse(const char* source,size_t size) {
+  Parse job{lua_,source,size,-1};Parse* outer=tParse;tParse=&job;
+#ifdef ESP_PLATFORM
+  static SemaphoreHandle_t lock=xSemaphoreCreateMutex();static std::atomic<size_t> deepest{0};
+  auto* stack=static_cast<uint8_t*>(heap_caps_malloc(parseStackBytes,MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT));
+  if(lock&&stack) {
+    esp_execute_shared_stack_function(lock,stack,parseStackBytes,parseHere);
+    // the stack came filled with 0xa5 and grows down + its deepest parse since boot is logged when it is new
+    size_t untouched=0;while(untouched<parseStackBytes&&stack[untouched]==0xa5)++untouched;
+    const size_t used=parseStackBytes-untouched;size_t peak=deepest.load();
+    while(used>peak&&!deepest.compare_exchange_weak(peak,used)){}
+    if(used>peak)log_i("lua parse stack peak %u of %u bytes",unsigned(used),unsigned(parseStackBytes));
+  }
+  heap_caps_free(stack);
+#else
+  parseHere();
+#endif
+  tParse=outer;return job.status;
 }
 bool Runtime::load(const char* source,size_t size) {
   if(!lua_||!source||size==0||size>sourceLimit){error_="app source must be 1 to 65536 bytes";return false;}
-  if(!checked(luaL_loadbufferx(lua_,source,size,"app.lua","t")))return false;
+  overrun_=nullptr;const int parsed=parse(source,size);
+  if(parsed<0){error_="not enough memory to load app";return false;}
+  if(!checked(parsed))return false;
   remaining_=200000;work_=32768;lua_sethook(lua_,budget,LUA_MASKCOUNT,1000);
-  if(!checked(lua_pcall(lua_,0,1,0)))return false;
+  const int base=lua_gettop(lua_)-1;
+  if(!run(0))return false;
+  lua_settop(lua_,base+1);
   if(!lua_istable(lua_,-1)){lua_pop(lua_,1);error_="app.lua must return a table of callbacks";return false;}
   if(app_!=LUA_NOREF)luaL_unref(lua_,LUA_REGISTRYINDEX,app_);
   app_=luaL_ref(lua_,LUA_REGISTRYINDEX);
@@ -280,7 +369,7 @@ bool Runtime::setJson(const char* name,const char* json,size_t size) {
   ArduinoJson::JsonDocument doc(hostJsonAllocator());
   if(ArduinoJson::deserializeJson(doc,json,size,ArduinoJson::DeserializationOption::NestingLimit(12))){error_="invalid app JSON";return false;}
   JsonInput input{name,doc.as<ArduinoJson::JsonVariantConst>()};lua_pushcfunction(lua_,installJson);lua_pushlightuserdata(lua_,&input);
-  return checked(lua_pcall(lua_,1,0,0));
+  overrun_=nullptr;return checked(lua_pcall(lua_,1,0,0));
 }
 bool Runtime::call(const char* event) {
   if(!lua_||app_==LUA_NOREF){error_="app has not been loaded";return false;}
@@ -288,7 +377,7 @@ bool Runtime::call(const char* event) {
   if(lua_isnil(lua_,-1)){lua_settop(lua_,base);return true;}
   if(!lua_isfunction(lua_,-1)){lua_settop(lua_,base);error_="app callback must be a function";return false;}
   lua_getglobal(lua_,"ctx");remaining_=40000;work_=32768;lua_sethook(lua_,budget,LUA_MASKCOUNT,1000);
-  const bool ok=checked(lua_pcall(lua_,1,0,0));lua_settop(lua_,base);return ok;
+  const bool ok=run(1);lua_settop(lua_,base);return ok;
 }
 bool Runtime::frame(const char* context,size_t size){clear(0);return setJson("ctx",context,size)&&call("frame");}
 std::string Runtime::stateJson() {
@@ -322,6 +411,14 @@ void Runtime::text(const char* words,size_t length,int x,int baseline,int size,u
 }  // namespace mooboard
 
 extern "C" {
+// lua's own vararg copy charges here (ltm.c) + many values copied by one instruction
+// lua's string to number conversion charges here (lvm.c) + a refusal fails the operation, then the callback
+int mb_lua_chargestring(size_t len){
+  mooboard::Runtime* r=mooboard::tRunning;
+  if(!r||r->charge(mooboard::decodeWork(len)+1))return 1;
+  r->overBudget();return 0;
+}
+void mb_lua_chargevalues(lua_State* l,int n){if(n>0&&!mooboard::owner(l)->charge(size_t(n)))luaL_error(l,"app exceeded its work budget");}
 void* mb_runtime_new(){return new(std::nothrow)mooboard::Runtime();}
 void mb_runtime_free(void* p){delete static_cast<mooboard::Runtime*>(p);}
 int mb_runtime_load(void* p,const char* s,size_t n){return p&&static_cast<mooboard::Runtime*>(p)->load(s,n);}

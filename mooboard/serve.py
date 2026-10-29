@@ -224,7 +224,9 @@ def serve(folder, port=0, use_live=False, open_browser=True):
                 if not 0 < size <= 4096 or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                     raise ValueError("Send a JSON object of at most 4 KB")
                 preview.change(self.path, json.loads(self.rfile.read(size)))
-                self.answer(200, "application/json", b'{"ok":true}')
+                with preview.lock:
+                    result = {"ok": True, "active": preview.active, "locked": preview.locked, "rotation": preview.rotation}
+                self.answer(200, "application/json", json.dumps(result).encode())
             except (ValueError, RuntimeError) as error:
                 self.answer(400, "application/json", json.dumps({"error": str(error)}).encode())
 

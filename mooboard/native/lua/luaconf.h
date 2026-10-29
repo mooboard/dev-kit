@@ -766,8 +766,11 @@
 /*
 @@ LUAL_BUFFERSIZE is the initial buffer size used by the lauxlib
 ** buffer system.
+** mooboard host (c3791): 512 everywhere, the board's own 16 * 4 * 8, so
+** the 64-bit dev kit and native tests build a string past 512 bytes in a
+** box with a finalizer as the board does
 */
-#define LUAL_BUFFERSIZE   ((int)(16 * sizeof(void*) * sizeof(lua_Number)))
+#define LUAL_BUFFERSIZE   512
 
 
 /*

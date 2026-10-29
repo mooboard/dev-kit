@@ -86,13 +86,17 @@
 ** are disabled via macro 'cvt2num'), do not modify 'result'
 ** and return 0.
 */
+/* host: charges a conversion's bytes to the running app; 0 refuses it */
+int mb_lua_chargestring (size_t len);
+
 static int l_strton (const TValue *obj, TValue *result) {
   lua_assert(obj != result);
   if (!cvt2num(obj))  /* is object not a string? */
     return 0;
   else {
     TString *st = tsvalue(obj);
-    return (luaO_str2num(getstr(st), result) == tsslen(st) + 1);
+    return (mb_lua_chargestring(tsslen(st)) &&
+            luaO_str2num(getstr(st), result) == tsslen(st) + 1);
   }
 }
 
@@ -383,26 +387,14 @@ void luaV_finishset (lua_State *L, const TValue *t, TValue *key,
 ** have different lengths.
 */
 static int l_strcmp (const TString *ts1, const TString *ts2) {
-  const char *s1 = getstr(ts1);
-  size_t rl1 = tsslen(ts1);  /* real length */
-  const char *s2 = getstr(ts2);
+  /* host: byte order, which strcoll gives in the C locale, in one memcmp
+     instead of a strcoll and two strlen calls for each '\0' */
+  size_t rl1 = tsslen(ts1);
   size_t rl2 = tsslen(ts2);
-  for (;;) {  /* for each segment */
-    int temp = strcoll(s1, s2);
-    if (temp != 0)  /* not equal? */
-      return temp;  /* done */
-    else {  /* strings are equal up to a '\0' */
-      size_t zl1 = strlen(s1);  /* index of first '\0' in 's1' */
-      size_t zl2 = strlen(s2);  /* index of first '\0' in 's2' */
-      if (zl2 == rl2)  /* 's2' is finished? */
-        return (zl1 == rl1) ? 0 : 1;  /* check 's1' */
-      else if (zl1 == rl1)  /* 's1' is finished? */
-        return -1;  /* 's1' is less than 's2' ('s2' is not finished) */
-      /* both strings longer than 'zl'; go on comparing after the '\0' */
-      zl1++; zl2++;
-      s1 += zl1; rl1 -= zl1; s2 += zl2; rl2 -= zl2;
-    }
-  }
+  int temp = memcmp(getstr(ts1), getstr(ts2), (rl1 < rl2) ? rl1 : rl2);
+  if (temp != 0)
+    return temp;
+  return (rl1 < rl2) ? -1 : (rl1 > rl2);
 }
 
 

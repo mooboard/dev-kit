@@ -1,6 +1,6 @@
 # v3 validation and release status
 
-This is the v3 release candidate under active validation. It is not published.
+This v3 release candidate has passed software, browser and ESP32-S3 board validation. It is not published. Physical panel appearance and P4 hardware are not verified.
 
 The kit and compatible firmware must pass these checks together:
 

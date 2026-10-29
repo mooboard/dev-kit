@@ -64,7 +64,7 @@ async function boot(){
 }
 $('live').onchange=()=>run(async()=>{await post('/mode',{live:$('live').checked});$('data-label').textContent=$('live').checked?'Live data':'Sample data';});
 $('pause').onclick=()=>run(async()=>{paused=!paused;await post('/mode',{active:!paused});$('pause').textContent=paused?'Resume':'Pause';});
-for(const key of ['clock24','seconds','rotation','locked'])$(key).onchange=()=>run(async()=>{await post('/mode',{[key]:$(key).checked});if(key==='locked'&&$('locked').checked)$('rotation').checked=false;if(key==='rotation'&&$('rotation').checked)$('locked').checked=false;});
+for(const key of ['clock24','seconds','rotation','locked'])$(key).onchange=()=>run(async()=>{const mode=await post('/mode',{[key]:$(key).checked});$('rotation').checked=mode.rotation;$('locked').checked=mode.locked;});
 const keys={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',' ':'a',Enter:'a',z:'a',x:'b'};
 function sendButtons(){return post('/input',{buttons:{...held,...gameButtons}});}
 function release(){held={};gameButtons={};run(sendButtons);}

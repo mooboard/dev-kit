@@ -252,11 +252,15 @@ void luaT_adjustvarargs (lua_State *L, int nfixparams, CallInfo *ci,
 }
 
 
+/* host: charges values copied by one instruction to the running app */
+void mb_lua_chargevalues (lua_State *L, int n);
+
 void luaT_getvarargs (lua_State *L, CallInfo *ci, StkId where, int wanted) {
   int i;
   int nextra = ci->u.l.nextraargs;
   if (wanted < 0) {
     wanted = nextra;  /* get all extra arguments available */
+    mb_lua_chargevalues(L, nextra);
     checkstackGCp(L, nextra, where);  /* ensure stack space */
     L->top.p = where + nextra;  /* next instruction will need top */
   }

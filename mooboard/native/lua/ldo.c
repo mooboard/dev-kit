@@ -206,9 +206,15 @@ l_noret luaD_errerr (lua_State *L) {
 ** Check whether stacks have enough space to run a simple function (such
 ** as a finalizer): At least BASIC_STACK_SIZE in the Lua stack, two
 ** available CallInfos, and two "slots" in the C stack.
+** mooboard host (c3791): one slot, so the finalizers run under a callback
+** (1) and its comparator or iterator (2) and not only at 0, which no app
+** reaches; LUAI_MAXCCALLS - 2 is 1 and kept every string buffer's box
+** (a string past LUAL_BUFFERSIZE) until lua_close. A finalizer here is a
+** C function (the sandbox has no setmetatable) and ccall gives a C
+** function no level.
 */
 int luaD_checkminstack (lua_State *L) {
-  if (getCcalls(L) >= LUAI_MAXCCALLS - 2)
+  if (getCcalls(L) >= LUAI_MAXCCALLS)
     return 0;  /* not enough C-stack slots */
   if (L->ci->next == NULL && luaE_extendCI(L, 0) == NULL)
     return 0;  /* unable to allocate first ci */
@@ -649,7 +655,13 @@ CallInfo *luaD_precall (lua_State *L, StkId func, int nresults) {
 l_sinline void ccall (lua_State *L, StkId func, int nResults, l_uint32 inc) {
   CallInfo *ci;
   L->nCcalls += inc;
-  if (l_unlikely(getCcalls(L) >= LUAI_MAXCCALLS)) {
+  /* mooboard host (c3772): only a call that runs lua again meets the
+     limit; a C function called here (a string buffer's __close, the
+     string library's arithmetic) runs none, and its stack is the leaf
+     under the lua that called it, so a string past LUAL_BUFFERSIZE costs
+     no level and the 32-bit board and a 64-bit dev kit count alike */
+  if (l_unlikely(getCcalls(L) >= LUAI_MAXCCALLS) &&
+      !ttislcf(s2v(func)) && !ttisCclosure(s2v(func))) {
     checkstackp(L, 0, func);  /* free any use of EXTRA_STACK */
     luaE_checkcstack(L);
   }
