@@ -31,7 +31,7 @@ def resolve(template, settings, secrets, url=False):
         value = (settings if group == "settings" else secrets).get(key)
         if value is None or (url and group == "secrets"):
             raise ValueError("Configure the data source and its credentials")
-        value = str(value)
+        value = ("true" if value else "false") if isinstance(value, bool) else str(value)
         return urllib.parse.quote(value, safe="") if url and match.group() != template else value
     result = live.TOKEN.sub(replace, template)
     if "{" in result or "}" in result or "\r" in result or "\n" in result:

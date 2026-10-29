@@ -53,7 +53,7 @@ Clock and Ambiance apps are selected in their respective pickers and expose sett
 
 ## Runtime limits
 
-The runtime uses Lua 5.4 text source, at most 64 KB. Each instance has a 512 KB allocation budget and each callback an instruction budget and a drawing work budget. A faulty app stops with an error instead of taking over the display task.
+The runtime uses Lua 5.4 text source, at most 64 KB. Each instance has a 512 KB allocation budget and each callback an instruction budget and a shared drawing and native-library work budget. Budget violations stop the app with an error. Large sorts, concatenations and UTF-8 scans consume work even when they run in native library code. Move large data transformations to your API or process them incrementally in Lua.
 
 The app has base operations and math, string, table and UTF-8 helpers. There is no filesystem, process execution, module loading, debug access or direct network IO. The host fetches declared feeds on its network task. The same limits apply to preview and firmware. String pattern functions, `table.move`, protected calls and metatable mutation are unavailable. Use simple string operations and explicit bounded loops.
 

@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <initializer_list>
 #include "pw_runtime/Font.h"
 extern "C" {
 #include "lua.h"
@@ -44,6 +45,62 @@ class HostJsonAllocator final : public ArduinoJson::Allocator {
 ArduinoJson::Allocator* hostJsonAllocator(){static HostJsonAllocator allocator;return &allocator;}
 Runtime* owner(lua_State* l) { return *static_cast<Runtime**>(lua_getextraspace(l)); }
 void work(lua_State* l,size_t amount){if(!owner(l)->spend(amount))luaL_error(l,"app exceeded its drawing budget");}
+void nativeWork(lua_State* l,uint64_t amount) {
+  if(amount>32768||!owner(l)->spend(size_t(amount)))luaL_error(l,"app exceeded its native work budget");
+}
+uint64_t rangeLength(lua_Integer first,lua_Integer last) {
+  if(first>last)return 0;
+  const uint64_t count=uint64_t(last)-uint64_t(first)+1;
+  return count?count:UINT64_MAX;
+}
+int nativeCall(lua_State* l) {
+  const char* name=lua_tostring(l,lua_upvalueindex(2));
+  const int arguments=lua_gettop(l);
+  nativeWork(l,1);
+  if(std::strcmp(name,"table.sort")==0&&lua_istable(l,1)) {
+    const size_t n=lua_rawlen(l,1);size_t longest=0;
+    if(n>181)nativeWork(l,32769);
+    for(size_t i=1;i<=n;++i){lua_rawgeti(l,1,lua_Integer(i));if(lua_type(l,-1)==LUA_TSTRING)longest=std::max(longest,size_t(lua_rawlen(l,-1)));lua_pop(l,1);}
+    if(n>1)nativeWork(l,uint64_t(n)*n*(longest+1));
+  }else if(std::strcmp(name,"table.concat")==0&&lua_istable(l,1)) {
+    const lua_Integer first=luaL_optinteger(l,3,1),last=luaL_optinteger(l,4,lua_Integer(lua_rawlen(l,1)));
+    const uint64_t count=rangeLength(first,last);nativeWork(l,count);
+    size_t separator=0;luaL_optlstring(l,2,"",&separator);
+    if(count>1)nativeWork(l,(count-1)*separator);
+    for(uint64_t i=0;i<count;++i){lua_rawgeti(l,1,first+lua_Integer(i));size_t bytes=0;lua_tolstring(l,-1,&bytes);nativeWork(l,bytes);lua_pop(l,1);}
+  }else if(std::strcmp(name,"table.unpack")==0&&lua_istable(l,1)) {
+    nativeWork(l,rangeLength(luaL_optinteger(l,2,1),luaL_optinteger(l,3,lua_Integer(lua_rawlen(l,1)))));
+  }else if((std::strcmp(name,"table.insert")==0||std::strcmp(name,"table.remove")==0)&&lua_istable(l,1)) {
+    nativeWork(l,lua_rawlen(l,1));
+  }else if(std::strcmp(name,"string.len")==0||std::strcmp(name,"utf8.codes")==0||std::strcmp(name,"tostring")==0) {
+    // These return a length, an iterator or an existing string without scanning it.
+  }else if(std::strcmp(name,"string.byte")==0||std::strcmp(name,"string.sub")==0) {
+    size_t bytes=0;luaL_checklstring(l,1,&bytes);
+    lua_Integer first=luaL_optinteger(l,2,1),last=luaL_optinteger(l,3,std::strcmp(name,"string.sub")==0?-1:first);
+    if(first<0)first+=lua_Integer(bytes)+1;if(last<0)last+=lua_Integer(bytes)+1;
+    first=std::max<lua_Integer>(1,std::min<lua_Integer>(first,lua_Integer(bytes)+1));
+    last=std::max<lua_Integer>(0,std::min<lua_Integer>(last,lua_Integer(bytes)));
+    nativeWork(l,rangeLength(first,last));
+  }else if(std::strcmp(name,"string.rep")==0) {
+    size_t bytes=0,separator=0;luaL_checklstring(l,1,&bytes);luaL_optlstring(l,3,"",&separator);
+    const lua_Integer count=luaL_checkinteger(l,2);
+    if(count>0){if(count>32768||bytes+separator>32768)nativeWork(l,32769);nativeWork(l,uint64_t(count)*(bytes+separator+1));}
+  }else {
+    nativeWork(l,uint64_t(arguments));
+    for(int i=1;i<=arguments;++i)if(lua_type(l,i)==LUA_TSTRING)nativeWork(l,lua_rawlen(l,i));
+    // Lua's numeric formatting permits field widths and precisions up to 99.
+    if(std::strcmp(name,"string.format")==0)nativeWork(l,uint64_t(arguments)*128);
+  }
+  lua_pushvalue(l,lua_upvalueindex(1));lua_insert(l,1);
+  lua_call(l,arguments,LUA_MULTRET);return lua_gettop(l);
+}
+void wrapLibrary(lua_State* l,const char* prefix,std::initializer_list<const char*> names) {
+  for(const char* name:names){
+    lua_getfield(l,-1,name);
+    if(!lua_isfunction(l,-1)){lua_pop(l,1);continue;}
+    lua_pushfstring(l,"%s.%s",prefix,name);lua_pushcclosure(l,nativeCall,2);lua_setfield(l,-2,name);
+  }
+}
 uint32_t color(lua_State* l, int at, uint32_t fallback = 0xffffff) {
   if (lua_isnoneornil(l, at)) return fallback;
   if (lua_isinteger(l, at)) return uint32_t(lua_tointeger(l, at)) & 0xffffff;
@@ -103,9 +160,12 @@ int bootstrap(lua_State* l) {
   }
   luaL_requiref(l,LUA_MATHLIBNAME,luaopen_math,1);lua_pop(l,1);
   luaL_requiref(l,LUA_STRLIBNAME,luaopen_string,1);
-  for(const char* name:{"dump","find","match","gmatch","gsub"}) {lua_pushnil(l);lua_setfield(l,-2,name);}lua_pop(l,1);
-  luaL_requiref(l,LUA_TABLIBNAME,luaopen_table,1);lua_pushnil(l);lua_setfield(l,-2,"move");lua_pop(l,1);
-  luaL_requiref(l,LUA_UTF8LIBNAME,luaopen_utf8,1);lua_pop(l,1);
+  for(const char* name:{"dump","find","match","gmatch","gsub"}) {lua_pushnil(l);lua_setfield(l,-2,name);}
+  wrapLibrary(l,"string",{"byte","char","format","len","lower","pack","packsize","rep","reverse","sub","unpack","upper"});lua_pop(l,1);
+  luaL_requiref(l,LUA_TABLIBNAME,luaopen_table,1);lua_pushnil(l);lua_setfield(l,-2,"move");
+  wrapLibrary(l,"table",{"concat","insert","remove","sort","unpack"});lua_pop(l,1);
+  luaL_requiref(l,LUA_UTF8LIBNAME,luaopen_utf8,1);wrapLibrary(l,"utf8",{"char","codepoint","codes","len","offset"});lua_pop(l,1);
+  for(const char* name:{"tonumber","tostring"}){lua_getglobal(l,name);lua_pushstring(l,name);lua_pushcclosure(l,nativeCall,2);lua_setglobal(l,name);}
   const luaL_Reg functions[]={{"clear",drawClear},{"pixel",drawPixel},{"line",drawLine},{"rect",drawRect},{"circle",drawCircle},{"text",drawText},{nullptr,nullptr}};
   lua_newtable(l);luaL_setfuncs(l,functions,0);
   lua_pushinteger(l,128);lua_setfield(l,-2,"width");lua_pushinteger(l,32);lua_setfield(l,-2,"height");lua_setglobal(l,"screen");
