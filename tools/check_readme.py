@@ -69,7 +69,7 @@ def main():
         with open(os.path.join(tools, "python3"), "w") as f:
             f.write('#!/bin/sh\nexec "%s" "$@"\n' % sys.executable)
         os.chmod(os.path.join(tools, "python3"), 0o755)
-        # on a Mac open shows a page in the browser, here the page only has to be there
+
         with open(os.path.join(tools, "open"), "w") as f:
             f.write('#!/bin/sh\nfor page in "$@"; do test -e "$page" || exit 1; done\n')
         os.chmod(os.path.join(tools, "open"), 0o755)

@@ -27,7 +27,9 @@ MAX_DEPTH = 4
 MAX_COMBINATIONS = 512
 ICON = 32
 FIELDS = ("mooboard", "id", "name", "author", "refresh", "duration")
-EXTRAS = ("settings", "layers")
+EXTRAS = ("category", "settings", "layers")
+
+CATEGORIES = ("Lifestyle", "Ambiance", "Clock Faces", "Games", "Tools", "AI")
 BUILT = ("frames", "built")
 REQUIRED = ("mooboard.json", "app.gif", "icon.png")
 SETTING_FIELDS = {"text": {"max"}, "color": set(), "toggle": set(), "choice": {"options"}}
@@ -37,8 +39,15 @@ LAYER_ORDER = ("type", "text", "src", "x", "y", "size", "font", "color", "align"
 IMAGE_LAYER = {"type", "src", "x", "y", "show"}
 VARIANT_COLORS = ("#77edd7", "#ffb7c9")
 ID = re.compile(r"[a-z0-9-]{3,32}")
-# the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
-RESERVED_IDS = ("prayer", "countdowns", "countdown", "sketch", "life", "plasma", "starfield", "fireplace")
+
+
+RESERVED_IDS = ("prayer", "countdowns", "countdown", "sketch", "life", "plasma", "starfield", "fireplace", "pong",
+                "snake", "blocks", "maze", "aquarium", "lava", "aurora", "rain", "sunmoon", "word", "quotes",
+                "habits", "timer", "pomodoro", "scoreboard", "dice", "breakout", "invaders", "flappy", "cycles",
+                "fireworks", "nightcity", "snowglobe", "raincode", "oktowake", "chores", "facts", "jokes",
+                "intervals", "chessclock", "wheel", "tally", "vfdstereo", "microracer", "pixelpinball", "microrogue",
+                "spacelander", "aibrief", "aipet", "aiscene", "aiface", "flightglance", "dinorunner",
+                "missiledefense", "minesweeper", "wordguess", "waterfall", "cybercity", "synthwave", "dune", "messages", "sports", "ambiance", "lua54")
 AUTHOR = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}")
 KEY = re.compile(r"[a-z][a-z0-9_]{0,15}")
 COLOR = re.compile(r"#[0-9a-fA-F]{6}")
@@ -67,6 +76,7 @@ NAME_LINK = "name can’t be a link"
 AUTHOR_WORDS = "author must be a GitHub username"
 REFRESH = "refresh must be 300 to 86400 seconds"
 DURATION = "duration must be 5 to 60 seconds"
+CATEGORY = "category must match the store: Lifestyle, Ambiance, Clock Faces, Games, Tools, or AI"
 SETTINGS = "settings must be a list of up to 8"
 SETTING = "Setting {name} needs a key, a type, a label of up to 24 characters and a default"
 SETTING_TWICE = "Two settings have the key {name}"
@@ -171,7 +181,7 @@ def _layers(items, settings, images):
             good = good and IMAGE.fullmatch(layer["src"]) is not None
         else:
             good = False
-        # a null x or y is a value the board refuses + only a missing one means the middle
+
         good = good and all(axis not in layer or _number(layer[axis], 0, top)
                             for axis, top in (("x", W - 1), ("y", H - 1)))
         good = good and isinstance(layer.get("show", ""), str)
@@ -182,7 +192,7 @@ def _layers(items, settings, images):
             uses += [(key, ("text", "choice")) for key in WORD.findall(layer["text"])]
             color = layer.get("color", "#ffffff")
             if not COLOR.fullmatch(color):
-                # a color setting is named in braces as the board reads it + a bare name is refused
+
                 found = WORD.fullmatch(color)
                 if not found:
                     raise Refused(LAYER_SETTING.format(number=number, key=color))
@@ -207,7 +217,7 @@ def _defaults(settings):
 
 
 def _fit_sets(layer, settings, number):
-    """every set of values a text layer can show + its choices in every combination with the rest at default"""
+    """text variants + other settings at defaults"""
     keys = sorted({key for key in WORD.findall(layer["text"]) if settings[key]["type"] == "choice"})
     total = 1
     for key in keys:
@@ -257,7 +267,7 @@ def _texts(value):
 
 
 def _whole(value):
-    """every key and text in value is whole characters + an escape of half a surrogate pair is not"""
+    """whole characters + complete surrogate pairs"""
     for text in _texts(value):
         try:
             text.encode("utf-8")
@@ -267,7 +277,7 @@ def _whole(value):
 
 
 def _hidden(cp):
-    """a control, format, bidi, private use or noncharacter code point as the board refuses it in any text"""
+    """hidden characters + invalid code points"""
     if cp < 0x20 or 0x7F <= cp <= 0x9F:
         return True
     if (cp == 0xAD or 0x600 <= cp <= 0x605 or cp in (0x61C, 0x6DD, 0x70F, 0x890, 0x891, 0x8E2, 0x180E)
@@ -282,7 +292,7 @@ def _hidden(cp):
 
 
 def _plain(value):
-    """no key or text in value holds a hidden or control character"""
+    """keys + text without hidden characters"""
     return not any(_hidden(ord(ch)) for text in _texts(value) for ch in text)
 
 
@@ -326,6 +336,8 @@ def check_manifest(data, built=False, images=None):
         raise Refused(REFRESH)
     if not _number(manifest["duration"], 5, 60):
         raise Refused(DURATION)
+    if "category" in manifest and manifest["category"] not in CATEGORIES:
+        raise Refused(CATEGORY)
     if built and (not _number(manifest["frames"], 1, MAX_FRAMES) or not isinstance(manifest["built"], str)
                   or not STAMP.fullmatch(manifest["built"])):
         raise Refused(PACKAGE_BAD)
@@ -479,6 +491,8 @@ def variants(app):
 
 def canonical(manifest):
     out = {key: manifest[key] for key in FIELDS if key in manifest}
+    if "category" in manifest:
+        out["category"] = manifest["category"]
     if "settings" in manifest:
         out["settings"] = [{key: s[key] for key in SETTING_ORDER if key in s} for s in manifest["settings"]]
     if "layers" in manifest:
@@ -488,7 +502,7 @@ def canonical(manifest):
 
 
 def manifest_bytes(manifest):
-    # the one way the writer lays a manifest out, so its order spacing and escapes hold nothing else
+
     return json.dumps(canonical(manifest), ensure_ascii=False, indent=2).encode("utf-8") + b"\n"
 
 
@@ -537,7 +551,7 @@ def _entries(data):
          start_disk, internal, external, offset) = struct.unpack("<IHHHHHHIIIHHHHHII", data[p:p + 46])
         raw = data[p + 46:p + 46 + name_len]
         p += 46 + name_len
-        # every field is what write puts there, so no header holds a date or another tool's mark
+
         if (sig != CENTRAL or made_by != MADE_BY or version != NEEDED or flags or method
                 or (time, date) != (0, ZIP_DATE) or csize != usize or extra_len or comment_len or start_disk or internal
                 or external != REGULAR << 16 or p > cd_at + cd_size):

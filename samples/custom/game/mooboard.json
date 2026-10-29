@@ -1,0 +1,25 @@
+{
+  "format": 3,
+  "id": "my-game",
+  "name": "My Paddle Game",
+  "version": "1.0.0",
+  "by": "your-github-name",
+  "description": "Original paddle and ball rules, with autonomous play and controller input.",
+  "category": "Games",
+  "runtime": "lua54",
+  "minFirmware": "0.4.1",
+  "boards": [
+    "s3",
+    "p4"
+  ],
+  "settings": [
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Paddle color",
+      "default": "#77edd7"
+    }
+  ],
+  "controls": [],
+  "sources": []
+}

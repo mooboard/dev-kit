@@ -1,13 +1,13 @@
-/* mooboard player: an app between the clock's turns, as developer mode shows it */
+
 (function (root) {
   'use strict';
 
   const preview = root.mooboardPreviewer || require('../../previewer/previewer.js');
 
-  const FRAME_MS = 33;                                // the board's frame
-  const FADE_MS = 400;                                // the board's crossfade
-  const LEAD_MS = Math.min(FRAME_MS, FADE_MS / 2);    // a change starts a frame back
-  const CLOCK_MS = 3000;                              // the clock between the app's turns here
+  const FRAME_MS = 33;
+  const FADE_MS = 400;
+  const LEAD_MS = Math.min(FRAME_MS, FADE_MS / 2);
+  const CLOCK_MS = 3000;
 
   function stateAt(i, turns) {
     let lo = 0, hi = turns.length - 1;
@@ -25,7 +25,7 @@
              mix: elapsed >= FADE_MS ? 1 : Math.fround(elapsed / FADE_MS) };
   }
 
-  // the multiply and add round once as the board's compiler does it: exact in a double, then one float32 rounding
+
   function crossfade(from, to, mix) {
     const f = Math.fround;
     const out = new Uint8Array(to.length);
@@ -80,7 +80,7 @@
     return when === 'day' ? rgb : preview.lowBrightness(rgb);
   }
 
-  // ---- the page ----
+
 
   function inflate(data) {
     const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate'));
@@ -91,7 +91,7 @@
     return Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
   }
 
-  // a png of frames stacked top to bottom as 128 by 32 frames
+
   function stack(text) {
     return preview.decode(bytesOf(text), inflate).then((image) => {
       const rgb = image.frames[0].rgb, size = preview.PANEL_W * preview.PANEL_H * 3, frames = [];

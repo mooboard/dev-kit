@@ -1,0 +1,36 @@
+{
+  "format": 3,
+  "id": "my-ambiance",
+  "name": "My Moving Lights",
+  "version": "1.0.0",
+  "by": "your-github-name",
+  "description": "A continuous animation with live speed and color settings.",
+  "category": "Ambiance",
+  "runtime": "lua54",
+  "minFirmware": "0.4.1",
+  "boards": [
+    "s3",
+    "p4"
+  ],
+  "settings": [
+    {
+      "key": "speed",
+      "type": "choice",
+      "label": "Speed",
+      "default": "Normal",
+      "options": [
+        "Slow",
+        "Normal",
+        "Fast"
+      ]
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Light color",
+      "default": "#77edd7"
+    }
+  ],
+  "controls": [],
+  "sources": []
+}

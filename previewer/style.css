@@ -1,4 +1,4 @@
-/* one dark page with the board in the middle */
+
 :root {
   color-scheme: dark;
   --ground: #0e1a22;
@@ -47,7 +47,7 @@ main {
   src: url("data:font/woff2;base64,d09GMgABAAAAAAUoAA8AAAAACWQAAATPAAIAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbgXocMAZgP1NUQVRAAFQRCAqGcIVkATYCJAMcCxAABCAFg3AHIBvFB1EUUkzxdYEpt12BEaAlhoHQlmZTgrYh0IfA4qWgX/Hz3GG4CtNhhLXged4/69z3XiYZkCszGuhvtEI7uyU7ohPQwa0U4l82dv8DoUBqhEzJJAKbbgaDoTtTt0ZD0epL7oTyRvjCK2TLE5A4+iupu5J4A+x8m8GgLglUXDTP/uzv3tKSxXMG44ViJohR2Rmq7hKAWekDh1M71y7IuyLRs4zO/XruwdIEs6KyuO9RgOdNNB2QDhi2TofrzBrOPQUCYgCAIkQEISBDgihKjjJy8fqbqaK2oaMnU3V1BptpS3FQOupLAWWwyUAB4QBRgPDIcwoQAxkghlNGAphsIc0Q0xmgjXX7KcMZMFE1oQHhDxOgw3lNU3pbPhPaa9goXlFELWdEe8D/44oWAe/nwkYB0GQWDDPEiRKj1UNnp5xel5+M0bUZ48FZZTq7p2ODenY4GDWL7HSs1hK3+LcE7h4v53HyD3eTAv3xFwQgX3UaKGAI4aBACgVKqEdNbVCARUewVgRhJBCATGo6IISqODwAFNAghSYghdEfxHBQDBePJhZ/BnDO/Sy8NVuyKRuznsAXFpIw8UDYAcSBGMgKuQEABgAomiYU+StOQEJhcp0HARVUtp0EZa/fv4jqYpT4SqLvE6nosaNu45wE1GrMp9eeWgOtqUNIy1oGVh86qDwAKVadhGL14447K5Mt+6dANnXprggWvDlSR+EiqHCbiDhO4k0IMKtBJHeBdeoGUjYtLR21GX0mc/zs2phhIwgiwghZtMTEvLB99e7kfCUAOWjkrXPAK8D6+IUb71lzlAP2VJ5oR4HV56NiUfDa/MidV3BupxLRk8tJc8VxjsXNzMllzKzVGeOIWUpBR6u9ooz57E7JIaqfvj5rsZNImjjEk64P5RKWP+hs7zCSK3VhcyUdMnNSh5ctE8Y5FiczK1Mw8xZXjG3rzzlcOXj6AZFwuS6XOHnYP8D8diVbUA1PSm4mqrlDv/tvbzORfUTk9Irnl4ikXrbMgc0Bqpojc3m5pH7C4lWXe7y+vgjlLkPYb5Q+OVOsiKrnfJR8m5BShqz4gki7Sun2vz2TZp/+8yhUR9dH9bya8FZy1Y4//9mVvEV5uJqW/vW7cMg+cPv2NxOTtiiPR9Jx/5+zDyMrv8pIkBSZAYegTK/mFD2eIlflbXa6WrwmYZnfkadLhrAYCot6BinI+zyfXwKkEaD0rTu5FNnwpBjtdR1JNk/fOdHbr688oXJ6buKTDyfE75l/Pd7i+gKwkgBl4Kz9243v/XNo/RHweIznAO9fHXaHKVHG0i9BBAVA8LdN5uUR/x5TEKnc3vk6difp+tvKu4usoVhFt5Nae6gkwG4FOw9zQ6UmIFpLXzdGAnshySLLXrIS5yJZa+/+qNlJtskq1BEYksUmEFOdyUJU9SfbSKiR6jh8XzMZxLLAEn51atQKKtBRex10VWCyWl4FhvLz8rA0cCownp+lnpdbUIEBQoJqWfwCClSoFRS0QEBP7bRTo058W4hLW26WJu3UcqpmaRZUx6nde4u3MU4zr0oYxtGg1RNX8TVCGrP9Omqr/RD0vQQEeDj1Gm1zB2CqFLi2DspIwS29ngRMa53B1/EI/lqTeDWpM5ClkcdYFr8mTo00AMLQUQIA") format("woff2");
 }
 
-/* the same header on every page: the cow, mooboard in the wordmark's font and teal, then the page's name */
+
 .brand { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; font-size: 20px; font-weight: 600;
          line-height: 1; letter-spacing: -0.01em; }
 .brand .cow { width: 34px; height: 27px; flex: none; }
@@ -96,7 +96,7 @@ main {
 .toggle label, label.toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; }
 input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; margin: 0; accent-color: var(--lit); }
 
-/* every select on every page: the browser's own list in one box with a chevron 16 px in and room for it */
+
 select {
   max-width: 100%;
   min-height: 44px;
@@ -117,7 +117,7 @@ select:focus-visible { outline: 2px solid var(--lit); outline-offset: 2px; }
 
 .warnings { list-style: none; margin: 0; padding: 0; display: grid; justify-items: center; gap: 6px; color: var(--warn); }
 
-/* home as the board's web app shows it with the grid of built in apps then the apps and developer apps rows */
+
 .home { width: 100%; max-width: 980px; margin: 8px auto 0; }
 .apps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 4px; }
 .app-cell { display: flex; flex-direction: column; align-items: center; min-width: 0; }
@@ -153,7 +153,7 @@ select:focus-visible { outline: 2px solid var(--lit); outline-offset: 2px; }
 button.app-icon { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 button.app-icon:focus-visible .app-icon__box { outline: 2px solid var(--lit); outline-offset: 4px; }
 
-/* an app's page as the board's web app draws its sheet with its cards fields and switches */
+
 .app-page { width: 100%; min-width: 0; max-width: 760px; margin: 8px auto 0; }
 .app-page__head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .app-page__title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 24px;
@@ -207,3 +207,23 @@ button.app-icon:focus-visible .app-icon__box { outline: 2px solid var(--lit); ou
        font-weight: 600; cursor: pointer; }
 .btn--danger { color: var(--bad); background: transparent; border: 1px solid rgba(255, 46, 136, 0.45); }
 .btn__icon { flex: none; width: 18px; height: 18px; }
+
+
+
+.faces { display: grid; gap: 12px; max-width: 440px; }
+.face-card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 8px; background: var(--panel);
+             border: 1px solid var(--rule-soft); border-radius: 14px; }
+.face-card__led { display: block; width: 100%; aspect-ratio: 4 / 1; border-radius: 5px; background: #060709;
+                  image-rendering: pixelated; }
+.face-card__name { text-align: center; font-size: 15px; font-weight: 700; }
+.face-card__pen { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 44px; height: 44px;
+                  padding: 0; color: var(--type); background: transparent; border: 0; cursor: pointer; }
+.face-card__pen svg { width: 30px; height: 30px; padding: 7px; border-radius: 50%; background: var(--sunk);
+                      box-shadow: 0 0 0 1px var(--rule); }
+.face-card__pen:focus-visible { outline: 2px solid var(--lit); outline-offset: -4px; border-radius: 50%; }
+.scrim { position: fixed; inset: 0; z-index: 30; background: rgba(4, 10, 14, 0.5); }
+.sheet { position: fixed; z-index: 31; left: 0; right: 0; bottom: 0; max-height: 82vh; overflow-y: auto;
+         padding: 16px 16px 24px; background: var(--ground); border-radius: 26px 26px 0 0; }
+@media (min-width: 700px) {
+  .sheet { left: 50%; right: auto; width: 520px; margin-left: -260px; bottom: 24px; border-radius: 22px; }
+}

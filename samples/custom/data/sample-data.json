@@ -1,0 +1,10 @@
+{
+  "feed": {
+    "status": "ok",
+    "value": {
+      "title": "HELLO FROM YOUR API",
+      "value": 42
+    },
+    "updatedAt": 0
+  }
+}

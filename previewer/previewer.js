@@ -1,15 +1,15 @@
-/* mooboard previewer: a picture shown as the board's LEDs, all in this browser */
+
 (function (root) {
   'use strict';
 
   const PANEL_W = 128;
   const PANEL_H = 32;
-  const LOWEST_LIT = 5;        // a channel below the panel's lowest step lights nothing
-  const MIN_FRAME_MS = 33;     // the board's frame
-  const SHORTEST_GIF_MS = 30;  // the shortest gif frame that keeps up with the board
-  const NIGHT_LEVEL = 40;      // the night clock's red out of the box
-  const LOW_SHARE = 0.6;       // the evening dimming's share of the light out of the box
-  const MAX_PIXELS = 1 << 24;  // the most one file may decode to over all its frames
+  const LOWEST_LIT = 5;
+  const MIN_FRAME_MS = 33;
+  const SHORTEST_GIF_MS = 30;
+  const NIGHT_LEVEL = 40;
+  const LOW_SHARE = 0.6;
+  const MAX_PIXELS = 1 << 24;
 
   const WORDS = {
     size: 'Not 128×32',
@@ -28,11 +28,12 @@
     textLength: 'Must be 1 to {max} characters',
     textHidden: 'Must not hold hidden characters',
     thisApp: 'This app',
+    faceSettings: 'Settings',
   };
 
-  // ---- the led look as the simulator draws it ----
 
-  // the pixels of each LED's block that its round dot lights, summed in float32 like the simulator
+
+
   function dotMask(scale) {
     const f = Math.fround;
     const half = f(scale / 2);
@@ -49,7 +50,7 @@
     return mask;
   }
 
-  // one pixel per LED in, scale pixels per LED out, black between the dots
+
   function ledLook(rgb, width, height, scale) {
     const mask = dotMask(scale);
     const outW = width * scale;
@@ -75,9 +76,9 @@
     return out;
   }
 
-  // ---- the night tint as the firmware applies it ----
 
-  // every lit LED in the night clock's red, its brightest channel scaled to the level
+
+
   function nightTint(rgb, level) {
     const out = new Uint8Array(rgb.length);
     for (let k = 0; k < rgb.length; k += 3) {
@@ -87,7 +88,7 @@
     return out;
   }
 
-  // ---- brightness ----
+
 
   function toLinear(v) {
     const c = v / 255;
@@ -102,14 +103,14 @@
   const LOW_TABLE = new Uint8Array(256);
   for (let v = 0; v < 256; v++) LOW_TABLE[v] = toSrgb(toLinear(v) * LOW_SHARE);
 
-  // each led at the evening's share of its light
+
   function lowBrightness(rgb) {
     const out = new Uint8Array(rgb.length);
     for (let k = 0; k < rgb.length; k++) out[k] = LOW_TABLE[rgb[k]];
     return out;
   }
 
-  // ---- the warnings ----
+
 
   function litAt(rgb, w, h, x, y) {
     if (x < 0 || y < 0 || x >= w || y >= h) return false;
@@ -117,7 +118,7 @@
     return Math.max(rgb[k], rgb[k + 1], rgb[k + 2]) >= LOWEST_LIT;
   }
 
-  // a faint pixel next to a lit one is antialiased ink, and losing it changes nothing
+
   function besideLit(rgb, w, h, x, y) {
     for (let dy = -1; dy <= 1; dy++) {
       for (let dx = -1; dx <= 1; dx++) {
@@ -127,11 +128,11 @@
     return false;
   }
 
-  // the rules a picture breaks in the order the page lists them
+
   function warnings(image) {
     const found = [];
     const w = image.width, h = image.height;
-    // the other checks only make sense for a 128 by 32 picture
+
     if (w !== PANEL_W || h !== PANEL_H) return ['size'];
     let edge = false, dim = false;
     for (const frame of image.frames) {
@@ -161,7 +162,7 @@
     return a === 255 ? c : Math.floor((c * a + 127) / 255);
   }
 
-  // ---- png ----
+
 
   const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
   const CHANNELS = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
@@ -180,7 +181,7 @@
     return (b[p] << 8) | b[p + 1];
   }
 
-  // the chunks a png is drawn from, its rows still compressed
+
   function parsePng(b) {
     if (!isPng(b)) throw new Error('not a png');
     let p = 8, info = null, palette = null, trns = null, size = 0;
@@ -224,7 +225,7 @@
     return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
   }
 
-  // unfilters one pass's rows in place and returns where the next pass starts
+
   function unfilter(raw, at, rowBytes, rows, bpp) {
     let prev = -1;
     for (let y = 0; y < rows; y++) {
@@ -255,7 +256,7 @@
     return (raw[row + (bit >> 3)] >> (8 - depth - (bit & 7))) & ((1 << depth) - 1);
   }
 
-  // raw values with their alpha, without gamma or color profiles, as the board decodes them
+
   function pngRgba(info, raw) {
     const w = info.width, h = info.height, depth = info.depth, ch = info.channels, type = info.colorType;
     const bits = ch * depth, bpp = Math.max(1, bits >> 3);
@@ -308,7 +309,7 @@
     return { width: w, height: h, rgba: rgba };
   }
 
-  // the bytes a png's rows take in every pass + a stream that inflates past them is refused before it decodes
+
   function pngRows(info) {
     const bits = info.channels * info.depth;
     let total = 0;
@@ -319,8 +320,8 @@
     return total;
   }
 
-  // a png's rows inflated by `inflate` up to one byte past them + refused when there is more + inflate is called as
-  // the composer's is with its zlib bytes, no format and the most it need give
+
+
   function pngRaw(info, inflate) {
     const rows = pngRows(info);
     return inflate(info.idat, undefined, rows).then((raw) => {
@@ -329,7 +330,7 @@
     });
   }
 
-  // the picture over black, as the board shows it
+
   function pngImage(info, raw) {
     const p = pngRgba(info, raw), rgba = p.rgba;
     const rgb = new Uint8Array(p.width * p.height * 3);
@@ -341,7 +342,7 @@
     return { width: p.width, height: p.height, frames: [{ rgb: rgb, delay: 0 }] };
   }
 
-  // ---- gif ----
+
 
   const INTERLACE = [[0, 8], [4, 8], [2, 4], [1, 2]];
 
@@ -350,7 +351,7 @@
       (b[4] === 55 || b[4] === 57) && b[5] === 97;
   }
 
-  // a run of sub-blocks joined, and where they end
+
   function subBlocks(b, p) {
     const parts = [];
     let size = 0;
@@ -371,7 +372,7 @@
     return { data: data, end: Math.min(p, b.length) };
   }
 
-  // one frame's lzw codes as color indices, fewer than count when the stream ends early
+
   function lzw(data, minSize, count) {
     const clear = 1 << minSize, end = clear + 1;
     const prefix = new Int16Array(4096), suffix = new Uint8Array(4096), stack = new Uint8Array(4097);
@@ -437,7 +438,7 @@
     }
   }
 
-  // every frame as the gif spec composes it, with LEDs no frame drew left off
+
   function decodeGif(b) {
     if (!isGif(b) || b.length < 13) throw new Error('not a gif');
     const w = b[6] | (b[7] << 8), h = b[8] | (b[9] << 8), flags = b[10];
@@ -497,7 +498,7 @@
         if (y >= h) continue;
         for (let x = 0; x < fw; x++) {
           const cx = fx + x;
-          if (cx >= w || i * fw + x >= indices.length) break;   // what never arrived stays as it was
+          if (cx >= w || i * fw + x >= indices.length) break;
           const index = indices[i * fw + x];
           if (index === use.transparent || index * 3 + 2 >= table.length) continue;
           const o = (y * w + cx) * 4;
@@ -520,7 +521,7 @@
     return { width: w, height: h, frames: frames };
   }
 
-  // a png or gif as frames, inflate turning zlib data into bytes
+
   function decode(bytes, inflate) {
     return Promise.resolve().then(() => {
       if (isGif(bytes)) return decodeGif(bytes);
@@ -530,10 +531,10 @@
     });
   }
 
-  // ---- an app file ----
+
 
   const ZIP_LOCAL = 0x04034b50, ZIP_CENTRAL = 0x02014b50, ZIP_END = 0x06054b50;
-  const MAX_PACKAGE = 8 * 1024 * 1024;   // the biggest package any board takes
+  const MAX_PACKAGE = 8 * 1024 * 1024;
 
   function uint32Le(b, p) {
     return b[p] + (b[p + 1] << 8) + (b[p + 2] << 16) + b[p + 3] * 16777216;
@@ -547,17 +548,26 @@
     return b.length >= 4 && uint32Le(b, 0) === ZIP_LOCAL;
   }
 
-  const KIT_CAP = 352 * 1024;               // a gif app's package
+  const KIT_CAP = 352 * 1024;
   const KIT_ENTRIES = 11;
   const STORE_ENTRIES = 202;
-  const DATA_CAP = 512 * 1024;              // a store app's data entry
-  const FILE_CAP = 8 * 1024;                // the manifest and the icon
-  // the store's renderers in the board's order + a store app names one the firmware draws
-  const RENDERERS = ['prayer', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace'];
-  const FORMAT_2 = ['format', 'id', 'name', 'version', 'by', 'description', 'category', 'uses', 'minFirmware', 'boards'];
+  const DATA_CAP = 512 * 1024;
+  const FILE_CAP = 8 * 1024;
+
+
+  const RENDERERS = ['prayer', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace', 'pong', 'snake',
+    'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits', 'timer',
+    'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity',
+    'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally',
+    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander', 'aibrief', 'aipet', 'aiscene', 'aiface',
+    'flightglance', 'dinorunner', 'missiledefense', 'minesweeper', 'wordguess', 'waterfall', 'cybercity', 'synthwave',
+    'dune'];
+
+  const FORMAT_2 = ['format', 'id', 'name', 'version', 'by', 'description', 'category', 'uses', 'minFirmware', 'boards',
+    'settings', 'controls'];
   const SEMVER = /^(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})\.(0|[1-9]\d{0,8})(-(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
 
-  // a package the board would refuse + its line is the build's own
+
   class Refusal extends Error {}
 
   const CRC_TABLE = new Uint32Array(256);
@@ -577,14 +587,14 @@
     return ['mooboard.json', 'app.gif', 'icon.png'].includes(name) || /^images\/[a-z0-9-]{1,32}\.png$/.test(name);
   }
 
-  // a data entry's path as the board takes it + three folders deep at most and never under local
+
   function dataName(name) {
     const found = /^data\/([A-Za-z0-9_-]{1,58}(?:\/[A-Za-z0-9_-]{1,58}){0,2})\.(?:json|bin)$/.exec(name);
     return found !== null && !/^local\//i.test(found[1]);
   }
 
-  // a stored zip's entries by name in the order they sit as the board reads one + every header field the kit's writer
-  // puts there and no byte between them
+
+
   function storedEntries(b, most) {
     const bad = () => new Refusal(WORDS.packageBad);
     if (b.length < 22) throw bad();
@@ -628,7 +638,7 @@
       uint32At(icon, 20) === 32;
   }
 
-  // a control, format, bidi, private use or noncharacter code point as the board's otherCategory flags it
+
   function hidden(cp) {
     if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f)) return true;
     if (cp === 0xad || (cp >= 0x600 && cp <= 0x605) || [0x61c, 0x6dd, 0x70f, 0x890, 0x891, 0x8e2, 0x180e].includes(cp) ||
@@ -640,13 +650,13 @@
     return (cp >= 0xfdd0 && cp <= 0xfdef) || (cp & 0xfffe) === 0xfffe;
   }
 
-  // the white space the board takes as blank as python's isspace has it
+
   function space(cp) {
     return cp === 0x20 || (cp >= 0x09 && cp <= 0x0d) || (cp >= 0x1c && cp <= 0x1f) || [0x85, 0xa0, 0x1680].includes(cp) ||
       (cp >= 0x2000 && cp <= 0x200a) || [0x2028, 0x2029, 0x202f, 0x205f, 0x3000].includes(cp);
   }
 
-  // the text a store app's label takes as the board reads it + one line of plain characters and no link
+
   function plain(text, most) {
     if (typeof text !== 'string' || text.includes('://') || /[\ud800-\udfff]/.test(text.replace(/[\ud800-\udbff][\udc00-\udfff]/g, ''))) {
       return false;
@@ -655,7 +665,7 @@
     return points.length >= 1 && points.length <= most && !points.some(hidden) && !points.every(space);
   }
 
-  // a store app's manifest as the board takes one from the store + its keys in order and its bytes the writer's own
+
   function checkStore(manifest, bytes) {
     const bad = new Refusal(WORDS.packageBad);
     if (Object.keys(manifest).some((key) => !FORMAT_2.includes(key))) throw bad;
@@ -664,7 +674,7 @@
       plain(manifest.name, 24) &&
       typeof manifest.version === 'string' && SEMVER.test(manifest.version) && plain(manifest.by, 32) &&
       plain(manifest.description, 160) && typeof manifest.category === 'string' &&
-      /^[A-Z][A-Za-z]{0,23}$/.test(manifest.category) && RENDERERS.includes(manifest.uses) &&
+      manifest.category.length <= 24 && /^[A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*)*$/.test(manifest.category) && RENDERERS.includes(manifest.uses) &&
       (manifest.minFirmware === undefined || (typeof manifest.minFirmware === 'string' && SEMVER.test(manifest.minFirmware))) &&
       Array.isArray(boards) && boards.length > 0 && boards.every((board, i) => ['s3', 'p4'].includes(board) &&
                                                                           (i === 0 || (boards[i - 1] === 's3' && board === 'p4')));
@@ -675,9 +685,9 @@
     if (want.length !== bytes.length || want.some((v, i) => v !== bytes[i])) throw bad;
   }
 
-  // ---- a gif app's pictures as the board checks them ----
 
-  // the bytes a picture would be written as compared with the picture as it goes + no copy is made
+
+
   function sameAs(b) {
     let at = 0, same = true;
     return {
@@ -699,7 +709,7 @@
     };
   }
 
-  // where a run of sub-blocks ends after its zero + -1 when it runs off the end
+
   function blocksEnd(b, p) {
     for (;;) {
       if (p >= b.length) return -1;
@@ -711,8 +721,8 @@
   const take = (b, p, n) => Array.from({ length: n }, (_, i) => b[p + i]);
   const LOOP = [0xff, 0x0b, 78, 69, 84, 83, 67, 65, 80, 69, 50, 46, 48, 0x03, 0x01];
 
-  // a gif that is only its header, its colors, its frames with one graphic control each, one loop block and its
-  // trailer as the kit's strip leaves one + true for one it cannot read so the picture's own check says so
+
+
   function gifClean(b) {
     if (b.length < 13 || b[0] !== 71 || b[1] !== 73 || b[2] !== 70) return true;
     let p = 13 + (b[10] & 0x80 ? 3 * (2 << (b[10] & 7)) : 0), control = null, looped = false;
@@ -756,7 +766,7 @@
     return String.fromCharCode(b[p + 4], b[p + 5], b[p + 6], b[p + 7]);
   }
 
-  // a png that is only the chunks a decoder needs with nothing after its end + true for one it cannot read
+
   function pngClean(b) {
     if (!isPng(b)) return true;
     const out = sameAs(b);
@@ -772,8 +782,8 @@
     return true;
   }
 
-  // a png's chunks as the board reads them + its size or null + IHDR first and once, PLTE and tRNS once, every crc
-  // right, an IDAT and an empty IEND
+
+
   function pngChunks(b) {
     if (!isPng(b)) return null;
     const once = new Set();
@@ -800,8 +810,8 @@
     return null;
   }
 
-  // app.gif read whole as the board reads it + every frame inside the screen and all its pixels there, its blocks
-  // ended and the trailer there + the kit's line or null and the frames it has
+
+
   function gifRefusal(b) {
     const unreadable = WORDS.gifUnreadable.replace('{name}', 'app.gif');
     if (b.length < 13 || b[0] !== 71 || b[1] !== 73 || b[2] !== 70) return { line: unreadable };
@@ -848,7 +858,7 @@
     return { line: null, frames: count };
   }
 
-  // a gif app's pictures as the board checks them before anything is shown + the build's line or null
+
   function pictureRefusal(gif, icon, images, manifest) {
     if (!gifClean(gif) || !pngClean(icon) || Array.from(images.values()).some((png) => !pngClean(png))) {
       return WORDS.packageBad;
@@ -866,8 +876,8 @@
     return null;
   }
 
-  // a .mooboard as the board reads it + its manifest's name and format and its icon and the picture a gif app shows +
-  // a store app has none since the board draws it + a gif app's manifest rules wait for the kit's helper
+
+
   function readPackage(b) {
     const bad = () => new Refusal(WORDS.packageBad);
     if (b.length > MAX_PACKAGE) throw bad();
@@ -908,8 +918,8 @@
              images: images };
   }
 
-  // a gif app's manifest as the board takes it + the kit's own rules from its helper with the writer's exact bytes and
-  // every picture used + the line the build says or null
+
+
   function kitRefusal(helper, kit, app) {
     try {
       helper.checkManifest(app.manifest, { kit: kit, built: true, images: new Set(app.files.keys()) });
@@ -920,7 +930,7 @@
     const want = helper.manifestBytes(app.manifest), used = new Set((app.manifest.layers || []).map((l) => l.src));
     if (want.length !== app.bytes.length || want.some((v, i) => v !== app.bytes[i])) return WORDS.packageBad;
     if (Array.from(app.files.keys()).some((n) => !used.has(n))) return WORDS.packageBad;
-    // the layers over every frame at the defaults and with each setting changed alone keep the ring dark
+
     if ((app.manifest.layers || []).some((l) => l.type === 'image')) {
       const frames = app.frames.map((f) => [f.rgb, f.delay]);
       for (const variant of helper.variants(app.manifest, kit)) {
@@ -931,12 +941,12 @@
     return null;
   }
 
-  // ---- an app's settings and the frames they draw ----
 
-  // the fonts the kit has + a text layer names one of these or the board refuses it
+
+
   const FONTS = ['nunito', 'outfit', 'inter', 'figtree', 'albert-sans'];
 
-  // a gif app's settings as its manifest lists them + a store app keeps its own on the board
+
   function settingsList(manifest) {
     return manifest && manifest.mooboard === 1 && Array.isArray(manifest.settings) ? manifest.settings : [];
   }
@@ -951,18 +961,18 @@
     return (manifest && Array.isArray(manifest.layers) ? manifest.layers : []).filter((l) => l && l.type === 'text');
   }
 
-  // the kit's fonts a manifest's text layers draw with + never a name outside the kit's list
+
   function fontsUsed(manifest) {
     return Array.from(new Set(textLayers(manifest).map((l) => l.font || 'nunito'))).filter((f) => FONTS.includes(f));
   }
 
-  // the words a text layer shows at these values
+
   function layerWords(layer, values) {
     return layer.text.replace(/\{([^{}]*)\}/g, (found, key) => String(values[key]));
   }
 
-  // the first text layer naming this setting that fits at no size with these values + its line as the build says it
-  // or null + a board refuses to save such words
+
+
   function tooLong(helper, kit, manifest, values, key) {
     const layers = manifest.layers || [];
     for (let i = 0; i < layers.length; i++) {
@@ -980,17 +990,17 @@
     return null;
   }
 
-  // the app's frames with its layers drawn over them at these values as the board draws them + by the kit's helper
+
   function appFrames(helper, kit, app, values) {
     if (!(app.manifest.layers || []).length) return app.frames;
     return helper.composeLayers(app.frames.map((f) => [f.rgb, f.delay]), app.manifest, app.images, values, kit)
       .map(([rgb, ms]) => ({ rgb: rgb, delay: ms }));
   }
 
-  // ---- home as the board's web app shows it ----
 
-  // the web app's palette and home icons + each 12 by 12 in two frames at rest and in its idle move + kept equal to
-  // the board's own by the kit's tests
+
+
+
   const ICON_PAL = {
     t: [119, 237, 215], w: [255, 255, 255], m: [255, 184, 28], p: [255, 46, 136], c: [245, 233, 214],
     o: [255, 122, 33], g: [120, 130, 140], d: [60, 64, 72], k: [255, 183, 201], b: [60, 170, 255], n: [150, 82, 36],
@@ -1014,8 +1024,12 @@
       '..tttttttt..', '..ttt.......', '..t.........', BLANK, BLANK],
       [BLANK, BLANK, '..tttttttt..', '.tttttttttt.', '.twwtddtddt.', '.twwtddtddt.', '.tttttttttt.',
       '..tttttttt..', '..ttt.......', '..t.........', BLANK, BLANK]],
+    ambiance: [[BLANK, '.....o......', '.....oo.....', '....ooo.....', '....oooo....', '...oooooo...', '...oomooo...',
+      '..ooommooo..', '..oommmmoo..', '..oommmmoo..', '...oommoo...', BLANK],
+      [BLANK, '......o.....', '......oo....', '.....ooo....', '....oooo....', '...oooooo...', '...ooomoo...',
+      '..oooommoo..', '..oommmmoo..', '..oomwwmoo..', '...oommoo...', BLANK]],
   };
-  // the clock icon's ring about cell 5 5 and its hands along the four clean directions of the first quarter
+
   const CLOCK_FACE = ['....www.....', '..ww...ww...', '.w.......w..', '.w.......w..', 'w.........w.', 'w.........w.',
                       'w.........w.', '.w.......w..', '.w.......w..', '..ww...ww...', '....www.....', '............'];
   const CLOCK_HANDS = {
@@ -1023,17 +1037,21 @@
     hour: [[[0, -1], [0, -2]], [[0, -1], [1, -2]], [[1, -1]], [[1, 0], [2, -1]]],
   };
   const CLOCK_ANGLES = [0, 26.57, 45, 63.43];
-  // home's built in apps in the board's first order + tv shows only while something feeds it
-  const HOME_APPS = ['media', 'calendar', 'sports', 'lights', 'clock', 'behavior', 'system', 'messages'];
+
+  const HOME_APPS = ['clock', 'calendar', 'lights', 'ambiance', 'media', 'messages', 'behavior', 'system'];
   const HOME_NAMES = {
     media: 'Media', calendar: 'Calendar', sports: 'Sports',
     lights: 'Lights', clock: 'Clock', behavior: 'Behavior',
-    system: 'System', messages: 'Messages',
+    system: 'Settings', messages: 'Messages', ambiance: 'Ambiance',
   };
-  const ICON = 32;            // an app's own icon is 32 by 32
-  const ICON_SCALE = 8;       // the web app paints a home icon 8 pixels an led
+  const ICON = 32;
+  const ICON_SCALE = 8;
 
-  // a hand at this many degrees clockwise from 12 snapped to the nearest of the 16 clean directions
+  const FACE_CATEGORY = 'Clock Faces';
+  const PEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+
   function handCells(hand, degrees) {
     let best = 0, bestOff = 360;
     for (let i = 0; i < 16; i++) {
@@ -1048,7 +1066,7 @@
     return cells;
   }
 
-  // the clock icon at this date with its hub led in this color
+
   function clockIcon(date, hub) {
     const rows = CLOCK_FACE.map((row) => row.split(''));
     const minutes = date.getMinutes();
@@ -1059,12 +1077,12 @@
     return rows.map((row) => row.join(''));
   }
 
-  // both frames of a home icon + the clock's from this date
+
   function homeIcon(key, date) {
     return key === 'clock' ? [clockIcon(date, 'w'), clockIcon(date, 't')] : ICONS[key];
   }
 
-  // rows of palette letters as a picture + a dot is off
+
   function iconPicture(rows) {
     const w = rows[0].length, h = rows.length, rgb = new Uint8Array(w * h * 3);
     for (let y = 0; y < h; y++) {
@@ -1076,7 +1094,7 @@
     return { width: w, height: h, rgb: rgb };
   }
 
-  // the 32 by 32 square round the first frame's lit leds as the kit's build picks an app's icon when it has none
+
   function defaultIcon(image) {
     const w = image.width, h = image.height, rgb = image.frames[0].rgb;
     let x0 = w, y0 = h, x1 = -1, y1 = -1;
@@ -1102,9 +1120,9 @@
     return { width: ICON, height: ICON, rgb: out };
   }
 
-  // ---- the page ----
 
-  // zlib bytes inflated by the browser + it stops a byte past `limit` when one is given so nothing inflates far
+
+
   function browserInflate(data, format, limit) {
     const reader = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate')).getReader();
     const parts = [];
@@ -1129,7 +1147,7 @@
     });
   }
 
-  // a png through the browser's own decoder when DecompressionStream is missing
+
   function canvasImage(bytes) {
     return createImageBitmap(new Blob([bytes], { type: 'image/png' }),
                              { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }).then((bitmap) => {
@@ -1154,14 +1172,14 @@
     return decode(bytes, browserInflate);
   }
 
-  // a name from a file on a tile only as the board names an app + 1 to 24 plain characters and no link else This app
-  // as the web app's own warning before add names one
+
+
   function tileName(name) {
     return plain(name, 24) ? name : WORDS.thisApp;
   }
 
-  // what a dropped file shows on the board and its tile on home + a picture's tile is named after the file + a store
-  // app's sits in the apps row with no picture
+
+
   function readFile(bytes, fileName) {
     if (!isZip(bytes)) {
       return decodeInPage(bytes).then((image) => ({
@@ -1169,9 +1187,9 @@
                               store: false },
       }));
     }
-    // a browser with no inflater of its own cannot hold a package's pictures to the board's rules so it gives no tile
+
     if (typeof DecompressionStream !== 'function') return Promise.reject(new Refusal(WORDS.noCheck));
-    // a picture that will not decode or inflates past its rows gets the build's own line for it
+
     const refuse = (line) => () => { throw new Refusal(line); };
     return Promise.resolve().then(() => readPackage(bytes)).then((app) => Promise.all([
       decodeInPage(app.icon).catch(refuse(WORDS.icon)), app.gif ? decodeInPage(app.gif) : null,
@@ -1179,14 +1197,16 @@
                                                                               refuse(WORDS.image.replace('{name}', src))))),
     ]).then(([icon, image, pictures]) => {
       if (icon.width !== ICON || icon.height !== ICON) throw new Error('not an icon');
-      const tile = { name: app.name, icon: { width: ICON, height: ICON, rgb: icon.frames[0].rgb }, store: app.format === 2 };
+
+      const tile = { name: app.name, icon: { width: ICON, height: ICON, rgb: icon.frames[0].rgb }, store: app.format === 2,
+                     face: app.format === 1 && app.manifest.category === FACE_CATEGORY };
       const made = image && { manifest: app.manifest, bytes: app.bytes, files: app.images, frames: image.frames,
                               images: Object.fromEntries(pictures), values: defaultValues(app.manifest), drawn: new Map() };
       return { image: image, tile: tile, app: made };
     }));
   }
 
-  // a layer's picture with its own alpha as the board draws it over the frames
+
   function decodeRgba(bytes) {
     return Promise.resolve().then(() => {
       const info = parsePng(bytes);
@@ -1194,7 +1214,7 @@
     });
   }
 
-  // each led a round dot with its glow as the web app paints its home icons
+
   function paintDots(canvas, picture, size) {
     canvas.width = picture.width * size;
     canvas.height = picture.height * size;
@@ -1216,7 +1236,7 @@
     }
   }
 
-  // an app's own 32 by 32 icon one pixel an led as the web app shows a store app's
+
   function paintIconPixels(canvas, picture) {
     canvas.width = picture.width;
     canvas.height = picture.height;
@@ -1235,6 +1255,8 @@
     const night = byId('night'), low = byId('low'), high = byId('high'), ringToggle = byId('ringToggle');
     const home = byId('home'), grid = byId('apps'), storeApps = byId('storeApps'), devRow = byId('devRow');
     const devApps = byId('devApps'), page = byId('appPage'), title = byId('appTitle'), back = byId('back');
+    const faceRow = byId('faceRow'), faceCards = byId('faceCards'), faceSheet = byId('faceSheet'), scrim = byId('scrim');
+    const faceTitle = byId('faceTitle'), faceFields = byId('faceFields'), faceSave = byId('faceSave');
     const toggles = doc.querySelector('.toggles');
     const devCard = byId('devCard'), storeCard = byId('storeCard'), storeTitle = byId('storeTitle');
     const saveRow = byId('saveRow'), fields = byId('settingsFields');
@@ -1254,7 +1276,7 @@
       return out;
     }
 
-    // home's grid of built in apps with the board's own icons in their two frames
+
     function buildGrid() {
       for (const key of HOME_APPS) {
         const box = doc.createElement('span'), led = doc.createElement('span');
@@ -1277,14 +1299,14 @@
       }
     }
 
-    // the clock icon shows the time here and turns with the minute as the web app's does
+
     function tickClock() {
       clearTimeout(clockTimer);
       paintGrid();
       clockTimer = setTimeout(tickClock, 60000 - Date.now() % 60000 + 20);
     }
 
-    // the dropped app's tile in its row + a gif app in developer apps and a store app before add + a tap opens its page
+
     function showTile(next) {
       tile = next;
       for (const old of home.querySelectorAll('[data-app]')) old.remove();
@@ -1293,6 +1315,8 @@
       paintIconPixels(canvas, tile.icon);
       box.appendChild(canvas);
       const made = cell(tile.name, box, 'button');
+      faceRow.hidden = true;
+      if (tile.face) return showFace();
       made.dataset.app = tile.store ? 'store' : 'developer';
       made.firstChild.type = 'button';
       made.firstChild.addEventListener('click', openPage);
@@ -1303,7 +1327,7 @@
       home.hidden = false;
     }
 
-    // ---- the app's page ----
+
 
     function loadScript(src) {
       if (!scripts.has(src)) {
@@ -1318,7 +1342,7 @@
       return scripts.get(src);
     }
 
-    // the composer's helper and fonts that draw an app's layers + the kit's own files beside this page
+
     function loadTools(manifest) {
       const fonts = fontsUsed(manifest);
       return Promise.all(['../composer/helper.js'].concat(
@@ -1335,7 +1359,7 @@
       }));
     }
 
-    // the frames the board shows at the app's values + each set drawn once
+
     function drawnFrames() {
       const key = JSON.stringify(settingsList(app.manifest).map((s) => app.values[s.key]));
       if (!app.drawn.has(key)) app.drawn.set(key, appFrames(tools.helper, tools.kit, app, app.values));
@@ -1346,10 +1370,58 @@
       setImage({ width: PANEL_W, height: PANEL_H, frames: drawnFrames() });
     }
 
-    // a setting changed on the page + the board above shows that set of values as the board would
+
     function change(key, value) {
       app.values = Object.assign({}, app.values, { [key]: value });
       if (tools) showFrames();
+      paintFace();
+    }
+
+
+
+
+
+    function showFace() {
+      const card = make('div', { class: 'face-card', 'data-app': 'face' }, [
+        make('canvas', { class: 'face-card__led' }), make('span', { class: 'face-card__name', text: tile.name })]);
+      if (app && settingsList(app.manifest).length) {
+        const pen = make('button', { type: 'button', class: 'face-card__pen', 'aria-label': WORDS.faceSettings });
+        pen.innerHTML = PEN;
+        pen.addEventListener('click', openFace);
+        card.appendChild(pen);
+      }
+      faceCards.appendChild(card);
+      faceRow.hidden = false;
+      devRow.hidden = true;
+      page.hidden = true;
+      home.hidden = false;
+      paintFace();
+    }
+
+
+    function paintFace() {
+      const led = faceCards.querySelector('.face-card__led');
+      if (!led) return;
+      const frames = app && tools ? drawnFrames() : image && image.frames;
+      if (frames && frames.length) paintIconPixels(led, { width: PANEL_W, height: PANEL_H, rgb: frames[0].rgb });
+    }
+
+    function openFace() {
+      faceTitle.textContent = tile.name;
+      faceFields.textContent = '';
+      settingsList(app.manifest).forEach((s, i) => faceFields.appendChild(settingField(s, i)));
+      faceSheet.hidden = false;
+      scrim.hidden = false;
+      (faceFields.querySelector('input') || faceSave).focus();
+    }
+
+    function closeFace() {
+      if (faceSheet.hidden) return;
+      faceSheet.hidden = true;
+      scrim.hidden = true;
+      faceFields.textContent = '';
+      const pen = faceCards.querySelector('.face-card__pen');
+      if (pen) pen.focus();
     }
 
     function make(tag, props, kids) {
@@ -1363,14 +1435,14 @@
       return out;
     }
 
-    // one setting as the board's web app draws it + a text field with its max then inline a colour picker a switch or
-    // a segmented choice each with its error line under it
+
+
     function settingField(s, i) {
       const id = 'setting-' + i, value = app.values[s.key];
       const err = make('p', { class: 'field__err', hidden: true });
       const label = make(s.type === 'choice' || s.type === 'toggle' ? 'span' : 'label',
                          { class: 'field__label', id: id + '-label', text: s.label });
-      // a text and a choice of more than three or whose words run past 18 stack as the board's sheet stacks them
+
       const stacked = s.type === 'text' || (s.type === 'choice' && (s.options.length > 3 || s.options.join('').length > 18));
       const field = make('div', { class: stacked ? 'field' : 'field field--inline' }, [label]);
       let control;
@@ -1393,9 +1465,9 @@
         } else {
           control.setAttribute('maxlength', String(s.max));
           control.setAttribute('autocomplete', 'off');
-          // words the board would not save get its line and change nothing + 1 to max characters of plain text +
-          // words that fit at no size are kept as the board keeps them with that layer undrawn and the build's line
-          // as a note
+
+
+
           control.addEventListener('input', () => {
             const words = control.value, points = Array.from(words, (ch) => ch.codePointAt(0));
             const line = points.length < 1 || points.length > s.max ? WORDS.textLength.replace('{max}', String(s.max))
@@ -1419,8 +1491,8 @@
       return field;
     }
 
-    // the app's page in home's place as the board's sheet + a gif app's settings with show in the rotation first and
-    // save + a store app's name and switch + remove app under either
+
+
     function openPage() {
       title.textContent = tile.name;
       fields.textContent = '';
@@ -1457,7 +1529,7 @@
 
     function fit() {
       const ratio = root.devicePixelRatio || 1;
-      const room = Math.max(64, stage.clientWidth - 20);   // the frame's 10 px each side
+      const room = Math.max(64, stage.clientWidth - 20);
       const tall = Math.max(64, root.innerHeight * 0.6);
       const next = Math.max(1, Math.min(64, Math.floor(Math.min(room / image.width, tall / image.height) * ratio)));
       if (next !== scale) {
@@ -1465,7 +1537,7 @@
         leds.width = image.width * scale;
         leds.height = image.height * scale;
       }
-      // a picture bigger than the window shrinks whole so it is never squashed
+
       const shrink = Math.min(1, room / ((image.width * scale) / ratio), tall / ((image.height * scale) / ratio));
       board.style.width = ((image.width * scale) / ratio) * shrink + 'px';
       board.style.height = ((image.height * scale) / ratio) * shrink + 'px';
@@ -1522,11 +1594,11 @@
       play();
     }
 
-    // a gif app with settings or layers shows at its defaults as the board draws it + its raw picture if the kit's
-    // helper is not beside this page
-    // a gif app shows at its defaults as the board draws it once the kit's helper finds the board would take it + a
-    // package the board would refuse gets no tile and the build's line + without the helper beside this page its raw
-    // picture shows
+
+
+
+
+
     function show(next) {
       app = next.app || null;
       tools = null;
@@ -1571,6 +1643,9 @@
     }
 
     back.addEventListener('click', closePage);
+    faceSave.addEventListener('click', closeFace);
+    scrim.addEventListener('click', closeFace);
+    doc.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeFace(); });
 
     buildGrid();
 
@@ -1587,7 +1662,7 @@
       drop.classList.remove('is-over');
       open(event.dataTransfer.files[0]);
     });
-    // night on the board always comes with the evening dimming, and the earlier choice returns after
+
     let picked = null;
     night.addEventListener('change', () => {
       if (night.checked) {

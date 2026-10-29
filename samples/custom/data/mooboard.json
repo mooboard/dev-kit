@@ -1,0 +1,38 @@
+{
+  "format": 3,
+  "id": "my-data-screen",
+  "name": "My Data Screen",
+  "version": "1.0.0",
+  "by": "your-github-name",
+  "description": "A screen that reads JSON from your own HTTPS API.",
+  "category": "Tools",
+  "runtime": "lua54",
+  "minFirmware": "0.4.1",
+  "boards": [
+    "s3",
+    "p4"
+  ],
+  "settings": [
+    {
+      "key": "endpoint",
+      "type": "text",
+      "label": "JSON endpoint",
+      "default": "https://example.com/data",
+      "max": 256
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Text color",
+      "default": "#77edd7"
+    }
+  ],
+  "controls": [],
+  "sources": [
+    {
+      "key": "feed",
+      "url": "{settings.endpoint}",
+      "refresh": 60
+    }
+  ]
+}

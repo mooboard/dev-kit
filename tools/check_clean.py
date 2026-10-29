@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Checks a kit for what must not be public such as paths, keys, tokens, addresses, and hidden text.
-# Usage: python3 tools/check_clean.py [folder]
+
+
 
 import os
 import re
@@ -10,12 +10,12 @@ import sys
 import zlib
 
 MAX_BYTES = 2 * 1024 * 1024
-ALLOWED_TYPES = {".png", ".gif", ".svg", ".gpl", ".txt", ".md", ".ttf", ".html", ".js", ".css", ".yml", ".py"}
-ALLOWED_NAMES = {"LICENSE", ".gitignore", "mooboard.json"}
-TEXT_TYPES = {".svg", ".gpl", ".txt", ".md", ".html", ".js", ".css", ".yml", ".py", ".json", ""}
+ALLOWED_TYPES = {".png", ".gif", ".svg", ".gpl", ".txt", ".md", ".ttf", ".html", ".js", ".css", ".yml", ".py", ".lua", ".c", ".cpp", ".h", ".hpp"}
+ALLOWED_NAMES = {"LICENSE", ".gitignore", "mooboard.json", "list.json", "categories.json", "presets.json", "sample-data.json"}
+TEXT_TYPES = {".svg", ".gpl", ".txt", ".md", ".html", ".js", ".css", ".yml", ".py", ".json", ".lua", ".c", ".cpp", ".h", ".hpp", ""}
 SKIP_DIRS = {".git"}
 
-# each pattern is written so this file passes its own check
+
 RULES = (
     ("home path", re.compile(r"/User[s]/|/hom[e]/|[A-Za-z]:\\User[s]\\|(?<![\w~])[~]/|-User[s]-")),
     ("temp path", re.compile(r"(?<![\w.])/(?:privat[e]/)?(?:tm[p]|va[r])/")),
@@ -27,7 +27,7 @@ RULES = (
     ("email address", re.compile(r"[\w.+-]{1,64}@[\w-]+(?:[.][\w-]+)*[.][A-Za-z]{2,}")),
     ("mac address", re.compile(r"\b[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}\b")),
 )
-INFLATE_MAX = 1 << 20   # the most a compressed text chunk may grow to
+INFLATE_MAX = 1 << 20
 
 
 def rules_in(text, rules=RULES):
@@ -128,6 +128,8 @@ def scan(root, rules=RULES, skip=()):
         for name in sorted(files):
             path = os.path.join(folder, name)
             rel = os.path.relpath(path, root).replace(os.sep, "/")
+            if rel == ".git":
+                continue
             if rel in unpublished:
                 continue
             findings += [(rel, 0, rule) for rule in rules_in(rel, rules)]
@@ -153,6 +155,8 @@ def check(root):
         for name in sorted(files):
             path = os.path.join(folder, name)
             rel = os.path.relpath(path, root).replace(os.sep, "/")
+            if rel == ".git":
+                continue
             if rel in unpublished:
                 continue
             count += 1

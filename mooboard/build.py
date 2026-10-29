@@ -71,6 +71,16 @@ def build(app_dir, out_dir=None):
     path = os.path.join(app_dir, "mooboard.json")
     if not os.path.isfile(path):
         raise Refused(package.MANIFEST_MISSING)
+    try:
+        manifest_kind = json.loads(_read(path))
+    except (ValueError, UnicodeError, RecursionError):
+        manifest_kind = None
+    if isinstance(manifest_kind, dict) and "format" in manifest_kind:
+        if manifest_kind.get("format") == 3:
+            from . import live
+            return live.build(app_dir, out_dir)
+        from . import catalog
+        return catalog.build(app_dir, out_dir)
     folder = os.path.join(app_dir, "images")
     available = ({"images/" + n for n in os.listdir(folder) if n.endswith(".png")
                   and os.path.isfile(os.path.join(folder, n))} if os.path.isdir(folder) else set())

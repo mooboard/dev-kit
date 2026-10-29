@@ -1,0 +1,15 @@
+{
+  "mooboard": 1,
+  "id": "face",
+  "name": "Cow Clock",
+  "author": "mooboard",
+  "refresh": 3600,
+  "duration": 10,
+  "category": "Clock Faces",
+  "settings": [
+    {"key": "cow", "type": "toggle", "label": "Cow", "default": true}
+  ],
+  "layers": [
+    {"type": "image", "src": "images/cow.png", "x": 4, "y": 4, "show": "cow"}
+  ]
+}

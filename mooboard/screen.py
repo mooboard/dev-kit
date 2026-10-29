@@ -116,7 +116,7 @@ class Screen:
         x0, y0, x1, y1 = int(x0), int(y0), int(x1), int(y1)
         a, b = abs(x1 - x0), abs(y1 - y0)
         sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
-        # Bresenham's own pixels, worked out only for the steps that land on the canvas
+
         if a >= b:
             low, high = (max(0, -x0), min(a, W - 1 - x0)) if sx > 0 else (max(0, x0 - W + 1), min(a, x0))
             for i in range(low, high + 1):

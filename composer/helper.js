@@ -1,4 +1,4 @@
-/* the mooboard helper's drawing and the build's checks, in the browser, pixel for pixel and byte for byte */
+
 (function (root) {
   'use strict';
 
@@ -25,7 +25,9 @@
   const MAX_COMBINATIONS = 512;
   const ICON = 32;
   const FIELDS = ['mooboard', 'id', 'name', 'author', 'refresh', 'duration'];
-  const EXTRAS = ['settings', 'layers'];
+  const EXTRAS = ['category', 'settings', 'layers'];
+
+  const CATEGORIES = ['Lifestyle', 'Ambiance', 'Clock Faces', 'Games', 'Tools', 'AI'];
   const BUILT = ['frames', 'built'];
   const SETTING_FIELDS = { text: ['max'], color: [], toggle: [], choice: ['options'] };
   const TEXT_LAYER = ['type', 'text', 'size', 'font', 'color', 'x', 'y', 'align', 'show'];
@@ -34,8 +36,15 @@
   const LAYER_ORDER = ['type', 'text', 'src', 'x', 'y', 'size', 'font', 'color', 'align', 'show'];
   const VARIANT_COLORS = ['#77edd7', '#ffb7c9'];
   const ID = /^[a-z0-9-]{3,32}$/;
-  // the store's own app ids and every built in renderer's name + a board refuses a gif app with one at install
-  const RESERVED_IDS = ['prayer', 'countdowns', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace'];
+
+
+  const RESERVED_IDS = ['prayer', 'countdowns', 'countdown', 'sketch', 'life', 'plasma', 'starfield', 'fireplace',
+    'pong', 'snake', 'blocks', 'maze', 'aquarium', 'lava', 'aurora', 'rain', 'sunmoon', 'word', 'quotes', 'habits',
+    'timer', 'pomodoro', 'scoreboard', 'dice', 'breakout', 'invaders', 'flappy', 'cycles', 'fireworks', 'nightcity',
+    'snowglobe', 'raincode', 'oktowake', 'chores', 'facts', 'jokes', 'intervals', 'chessclock', 'wheel', 'tally',
+    'vfdstereo', 'microracer', 'pixelpinball', 'microrogue', 'spacelander', 'aibrief', 'aipet', 'aiscene', 'aiface',
+    'flightglance', 'dinorunner', 'missiledefense', 'minesweeper', 'wordguess', 'waterfall', 'cybercity', 'synthwave',
+    'dune', 'messages', 'sports', 'ambiance', 'lua54'];
   const AUTHOR = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
   const KEY = /^[a-z][a-z0-9_]{0,15}$/;
   const COLOR = /^#[0-9a-fA-F]{6}$/;
@@ -68,6 +77,7 @@
     author: 'author must be a GitHub username',
     refresh: 'refresh must be 300 to 86400 seconds',
     duration: 'duration must be 5 to 60 seconds',
+    category: 'category must match the store: Lifestyle, Ambiance, Clock Faces, Games, Tools, or AI',
     settings: 'settings must be a list of up to 8',
     setting: 'Setting {name} needs a key, a type, a label of up to 24 characters and a default',
     settingTwice: 'Two settings have the key {name}',
@@ -92,7 +102,7 @@
   const SETTING_TYPE = { text: WORDS.settingText, color: WORDS.settingColor, toggle: WORDS.settingToggle,
                          choice: WORDS.settingChoice };
 
-  // a line with its {names} filled in
+
   function fill(line, values) {
     return line.replace(/\{(\w+)\}/g, (found, name) => (name in values ? String(values[name]) : found));
   }
@@ -118,7 +128,7 @@
     return out;
   }
 
-  // ---- text, as mooboard/text.py ----
+
 
   class Atlas {
     constructor(text) {
@@ -195,7 +205,7 @@
     }
   }
 
-  // ---- the canvas and the screen, as mooboard/screen.py ----
+
 
   function blend(px, at, color, t) {
     if (t <= 0) return;
@@ -234,7 +244,7 @@
     }
   }
 
-  // records what layers draw once so every frame replays the same writes
+
   class Recorder extends Canvas {
     constructor() {
       super();
@@ -250,12 +260,12 @@
     }
   }
 
-  // a place left out or None, as the helper takes x, y and a ticker's y
+
   function given(value, fallback) {
     return value === undefined || value === null ? fallback : value;
   }
 
-  // a value left out takes the default, as a python keyword does, while a None stays a value the checks refuse
+
   function absent(value, fallback) {
     return value === undefined ? fallback : value;
   }
@@ -298,7 +308,7 @@
       }
     }
 
-    // Bresenham's own pixels, worked out only for the steps that land on the canvas, in whole numbers of any size
+
     line(a) {
       const c = colorOf(a.color);
       const [x0, y0, x1, y1] = [a.x0, a.y0, a.x1, a.y1].map((v) => BigInt(Math.trunc(v)));
@@ -320,7 +330,7 @@
       }
     }
 
-    // the size the text took, the largest board size at or under the one asked whose ink stays in the safe area
+
     place(a) {
       const words = String(a.words), size = absent(a.size, 9), font = absent(a.font, 'nunito');
       const align = absent(a.align, 'left'), x = given(a.x, null), y = given(a.y, null);
@@ -423,7 +433,7 @@
       return this[kind](args);
     }
 
-    // problems, when given, collects what fails instead of stopping, as the page shows it
+
     compose(frames, now, problems) {
       const at = now || clockNow();
       for (let f = 0; f < frames.length; f++) {
@@ -449,7 +459,7 @@
     }
   }
 
-  // ---- the board's clock ----
+
 
   function pad(n) {
     return (n < 10 ? '0' : '') + n;
@@ -466,7 +476,7 @@
     return { hour: d.getHours(), minute: d.getMinutes(), weekday: (d.getDay() + 6) % 7, day: d.getDate() };
   }
 
-  // ---- bytes ----
+
 
   const CRC_TABLE = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -528,7 +538,7 @@
 
   const utf8 = (text) => new TextEncoder().encode(text);
 
-  // ---- gif, as the encoder in mooboard/gif.py ----
+
 
   function hundredths(ms) {
     return Math.max(3, Math.min(65535, Math.trunc(ms / 10 + 0.5)));
@@ -625,7 +635,7 @@
     return boxes.map((b) => b.items);
   }
 
-  // more than 256 colors to 256 or fewer, black kept as black and nothing lit turned black
+
   function quantize(pixels) {
     const counts = new Map();
     for (const c of pixels) counts.set(c, (counts.get(c) || 0) + 1);
@@ -713,7 +723,7 @@
 
   const NETSCAPE = [0x21, 0xff, 0x0b].concat(Array.from('NETSCAPE2.0', (c) => c.charCodeAt(0)), [3, 1, 0, 0, 0]);
 
-  // the frames as a looping gif, with each frame as a decoder shows it
+
   function encodeGif(frames) {
     const merged = [];
     for (const [rgb, ms] of frames) {
@@ -766,7 +776,7 @@
     return { bytes: out.done(), shown: seen, delays: merged.map(([, ms]) => hundredths(ms) * 10) };
   }
 
-  // ---- png, stored deflate so the same pixels are the same bytes ----
+
 
   const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 
@@ -801,12 +811,12 @@
     return rows;
   }
 
-  // png.encode in the helper: 8 bit color and no alpha
+
   function encodePng(width, height, rgb) {
     return png(width, height, 8, 2, filtered(width, height, 3, (rows, o, i) => rows.set(rgb.subarray(i * 3, i * 3 + 3), o)), []);
   }
 
-  // a picture with its alpha: a palette when it has 256 colors or fewer, else 8 bit color and alpha
+
   function encodePngRgba(width, height, rgba) {
     const value = (i) => ((rgba[i * 4 + 3] << 24) | (rgba[i * 4] << 16) | (rgba[i * 4 + 1] << 8) | rgba[i * 4 + 2]) >>> 0;
     const colors = new Set();
@@ -827,7 +837,7 @@
     return png(width, height, 8, 3, filtered(width, height, 1, (rows, o, i) => { rows[o] = index.get(value(i)); }), extra);
   }
 
-  // ---- zip, stored entries as package.write lays them out ----
+
 
   const LOCAL = 0x04034b50, CENTRAL = 0x02014b50, END = 0x06054b50;
   const ZIP_DATE = 0x21, REGULAR = 0o100644, MADE_BY = (3 << 8) | 20;
@@ -855,7 +865,7 @@
     return (b[p] | (b[p + 1] << 8) | (b[p + 2] << 16) | (b[p + 3] << 24)) >>> 0;
   }
 
-  // a zip's entries with their bytes as stored, method 8 left for the caller to inflate
+
   function readZip(data) {
     let end = -1;
     for (let p = data.length - 22; p >= Math.max(0, data.length - 22 - 65535); p--) {
@@ -881,7 +891,7 @@
     return out;
   }
 
-  // ---- the package, as mooboard/package.py and mooboard/build.py ----
+
 
   function isNumber(value, low, high) {
     return Number.isInteger(value) && low <= value && value <= high;
@@ -960,7 +970,7 @@
       } else {
         good = false;
       }
-      // a null x or y is a value the board refuses + only a missing one means the middle
+
       good = good && [['x', W - 1], ['y', H - 1]].every(([axis, top]) => !(axis in layer) || isNumber(layer[axis], 0, top));
       good = good && typeof absent(layer.show, '') === 'string';
       if (!good) throw new Refused(fill(WORDS.layer, { number: number }));
@@ -969,7 +979,7 @@
         for (const key of wordsIn(layer.text)) uses.push([key, ['text', 'choice']]);
         const color = absent(layer.color, '#ffffff');
         if (!COLOR.test(color)) {
-          // a color setting is named in braces as the board reads it + a bare name is refused
+
           const found = /^\{([^{}]*)\}$/.exec(color);
           if (!found) throw new Refused(fill(WORDS.layerSetting, { number: number, key: color }));
           uses.push([found[1], ['color']]);
@@ -1036,8 +1046,8 @@
     }
   }
 
-  // options: kit for the text, built for a package's own manifest, images the names an image layer may use
-  // every key and text that passes `fits` + down through lists and objects
+
+
   function texts(value, fits) {
     if (typeof value === 'string') return fits(value);
     if (Array.isArray(value)) return value.every((item) => texts(item, fits));
@@ -1045,12 +1055,12 @@
     return true;
   }
 
-  // whole characters + an escape of half a surrogate pair is not
+
   function whole(text) {
     return !/[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(text);
   }
 
-  // a control, format, bidi, private use or noncharacter code point as the board refuses it in any text
+
   function hidden(cp) {
     if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f)) return true;
     if (cp === 0xad || (cp >= 0x600 && cp <= 0x605) || [0x61c, 0x6dd, 0x70f, 0x890, 0x891, 0x8e2, 0x180e].includes(cp) ||
@@ -1087,6 +1097,7 @@
     if (typeof manifest.author !== 'string' || !AUTHOR.test(manifest.author)) throw new Refused(WORDS.author);
     if (!isNumber(manifest.refresh, 300, 86400)) throw new Refused(WORDS.refresh);
     if (!isNumber(manifest.duration, 5, 60)) throw new Refused(WORDS.duration);
+    if ('category' in manifest && !CATEGORIES.includes(manifest.category)) throw new Refused(WORDS.category);
     if (built && (!isNumber(manifest.frames, 1, MAX_FRAMES) || typeof manifest.built !== 'string' ||
                   !STAMP.test(manifest.built))) throw new Refused(WORDS.packageBad);
     const settings = checkSettings(manifest.settings === undefined ? [] : manifest.settings);
@@ -1130,13 +1141,13 @@
     return false;
   }
 
-  // the edge ring refuses and dim colors warn, as package.check_frames
+
   function checkFrames(frames) {
     if (frames.some(([rgb]) => ringLit(rgb))) throw new Refused(WORDS.edge);
     return frames.some(([rgb]) => dim(rgb)) ? [WORDS.dim] : [];
   }
 
-  // the layers drawn over every frame at the given values, as package.compose
+
   function composeLayers(frames, manifest, images, values, kit) {
     const settings = settingsOf(manifest);
     const at = Object.assign(defaults(settings), values || {});
@@ -1175,7 +1186,7 @@
     return words.join('');
   }
 
-  // the defaults, then each setting changed alone, as package.variants
+
   function variants(manifest, kit) {
     const settings = settingsOf(manifest), base = defaults(settings);
     const out = [{ key: null, value: null, values: Object.assign({}, base) }];
@@ -1190,7 +1201,7 @@
     return out;
   }
 
-  // a 32 by 32 crop around what the first frame lights, as package.default_icon
+
   function defaultIcon(rgb) {
     let minX = W, maxX = -1, minY = H, maxY = -1;
     for (let i = 0; i < W * H; i++) {
@@ -1215,12 +1226,13 @@
       return out;
     };
     const out = pick(manifest, FIELDS);
+    if ('category' in manifest) out.category = manifest.category;
     if ('settings' in manifest) out.settings = manifest.settings.map((s) => pick(s, SETTING_ORDER));
     if ('layers' in manifest) out.layers = manifest.layers.map((layer) => pick(layer, LAYER_ORDER));
     return Object.assign(out, pick(manifest, BUILT));
   }
 
-  // the one way the writer lays a manifest out, as package.manifest_bytes
+
   function manifestBytes(manifest) {
     return utf8(JSON.stringify(canonical(manifest), null, 2) + '\n');
   }
@@ -1236,8 +1248,8 @@
             ((data[20] << 24) | (data[21] << 16) | (data[22] << 8) | data[23]) >>> 0];
   }
 
-  // app holds the author's manifest, the frames of a compose that met no failure, every picture in images/ by its
-  // path with its png and pixels, the built stamp and the kit for text
+
+
   function build(app) {
     const kit = app.kit;
     const manifest = checkManifest(app.manifest, { images: new Set(Object.keys(app.images)), kit: kit });
@@ -1279,7 +1291,7 @@
     return date.toISOString().slice(0, 19) + 'Z';
   }
 
-  const api = { W, H, SAFE, SIZES, FONTS, ALIGNS, MAX_FRAMES, WORDS, DAYS, fill, TooLong, Refused, Atlas, layout, ink,
+  const api = { W, H, SAFE, SIZES, FONTS, ALIGNS, MAX_FRAMES, WORDS, DAYS, CATEGORIES, fill, TooLong, Refused, Atlas, layout, ink,
                 drawText, blend, colorOf, Canvas, Screen, clockWords, clockNow, crc32, adler32, encodeGif, encodePng,
                 encodePngRgba, writeZip, readZip, checkManifest, checkSettings, checkLayers, checkFrames, composeLayers, variants,
                 defaultIcon,

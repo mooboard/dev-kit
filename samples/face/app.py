@@ -1,0 +1,13 @@
+import datetime
+
+from mooboard import Screen, colors
+
+DAYS = "MON TUE WED THU FRI SAT SUN".split()
+
+
+
+now = datetime.datetime.now()
+screen = Screen()
+screen.text("%d:%02d" % ((now.hour + 11) % 12 + 1, now.minute), x=44, y=19, size=13, color=colors.WHITE)
+screen.text("%s %d" % (DAYS[now.weekday()], now.day), x=44, y=28, size=6, color=colors.MARIGOLD)
+screen.save()
