@@ -1,4 +1,4 @@
-/* mooboard composer: an app's screens put together by hand and checked with the build's own rules, all in this browser */
+
 (function (root) {
   'use strict';
 
@@ -12,10 +12,10 @@
           paint, picturesOf, placeText, readApp, relabel, removeSetting, resized, settingOf, settingValues,
           SHORTEST_MS, slug, timeOf, unzip, usedFonts, W, WORDS, wordsOf, GitHubUsers, authorMissing } = model;
 
-  // how long the author box waits after the last key before it asks github
+
   const AUTHOR_WAIT_MS = 800;
 
-  // ---- the page ----
+
 
   function hexBytes(text) {
     const out = new Uint8Array(text.length >> 1);
@@ -23,7 +23,7 @@
     return out;
   }
 
-  // the bytes a png's rows take, so inflating stops there as the helper's reader does
+
   function rowBytes(info) {
     const bits = info.channels * info.depth, passes = info.interlace === 1
       ? [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8], [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]] : [[0, 0, 1, 1]];
@@ -35,13 +35,13 @@
     return total;
   }
 
-  // a picture's pixels with their alpha, its size read from its header before anything is inflated
+
   function decodePng(bytes) {
     return Promise.resolve().then(() => {
       const info = preview.parsePng(bytes);
       if (info.width > W || info.height > H) throw new helper.Refused(WORDS.pictureBig);
       return inflate(info.idat, 'deflate', rowBytes(info)).then((raw) => {
-        // a stream that inflates past its own rows is refused as the kit and the board refuse it
+
         if (raw.length > rowBytes(info)) throw new Error('png inflates past its rows');
         return preview.pngRgba(info, raw);
       });
@@ -111,7 +111,7 @@
       return loading.get(font);
     }
 
-    // runs now when every font in use is here, or once they arrive
+
     function withFonts(then) {
       const fonts = usedFonts(app);
       if (fonts.every(fontData)) return then();
@@ -123,7 +123,7 @@
     const current = () => (selected ? findElement(app, frame, selected) : null);
     const when = () => (byId('night').checked ? 'night' : byId('evening').checked ? 'evening' : 'day');
 
-    // ---- history ----
+
 
     function snapshot() {
       return JSON.stringify({ app: app, frame: frame, selected: selected });
@@ -146,7 +146,7 @@
       refresh(true);
     }
 
-    // a field that changes the app as it is typed in and lands in undo once when it is left
+
     function live(input, apply) {
       input.addEventListener('focus', () => { pending = snapshot(); });
       input.addEventListener('input', () => {
@@ -173,7 +173,7 @@
       if (s !== null) restore(s);
     }
 
-    // ---- drawing ----
+
 
     function fit() {
       const ratio = root.devicePixelRatio || 1;
@@ -206,7 +206,7 @@
       glow.getContext('2d').putImageData(flat(rgb), 0, 0);
     }
 
-    // the board at the time of day picked, as the player shows an app
+
     function looked(rgb) {
       const w = when();
       return player.look(w === 'night' ? preview.nightTint(rgb, preview.NIGHT_LEVEL) : rgb, w);
@@ -273,7 +273,7 @@
       timer = setTimeout(() => withFonts(checkNow), 150);
     }
 
-    // ---- the lists ----
+
 
     function el(tag, props, children) {
       const node = doc.createElement(tag);
@@ -343,7 +343,7 @@
       if (uid) showBoard();
     }
 
-    // a rebuild puts focus back on the control that had it, so the keyboard keeps its place
+
     function restoring(rebuild) {
       const active = doc.activeElement, key = active && active.getAttribute ? active.getAttribute('data-key') : null;
       rebuild();
@@ -352,14 +352,14 @@
       (again || board).focus({ preventScroll: true });
     }
 
-    // on a phone the settings cover the lower half, so the board comes up above them
+
     function showBoard() {
       if (root.getComputedStyle(sheet).position !== 'fixed') return;
       const b = board.getBoundingClientRect(), s = sheet.getBoundingClientRect();
       if (b.top < 0 || b.bottom > s.top) root.scrollBy(0, b.top - 12);
     }
 
-    // ---- the inspector ----
+
 
     function update(change) {
       const found = current();
@@ -570,7 +570,7 @@
       draw();
     }
 
-    // ---- the app and its settings ----
+
 
     const appInputs = { name: byId('app-name'), id: byId('app-id'), author: byId('app-author'), refresh: byId('app-refresh'),
                         duration: byId('app-duration'), category: byId('app-category') };
@@ -593,13 +593,13 @@
     live(appInputs.duration, (input) => { app.duration = wholeOr(input.value); });
     live(appInputs.category, (input) => { app.category = input.value; });
 
-    // ---- the author: github asked once the typing stops, the box is left, a new name comes in or before it goes out ----
+
 
     const users = new GitHubUsers((url) => root.fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer' }));
     const authorLine = byId('author-line');
     let authorSettled = true, authorTimer = 0, askedFor = '';
 
-    // the red line only once the typing stops, and package off while it shows
+
     function showAuthor() {
       const missing = authorMissing(app.author, users);
       authorLine.textContent = authorSettled && missing ? WORDS.authorMissing : '';
@@ -607,7 +607,7 @@
       packageButton.disabled = !(checked && checked.ok) || missing;
     }
 
-    // github is asked about a name the build's rule takes and it has not answered for yet
+
     function askable(name) {
       return name !== '' && !authorMissing(name, users) && users.known(name) === null;
     }
@@ -637,8 +637,8 @@
       settleAuthor();
     });
 
-    // whether the app may go out: anything but a name github's rules refuse or github lacks, asked first when github
-    // has not said, and never held when it cannot say
+
+
     function authorReady() {
       clearTimeout(authorTimer);
       authorSettled = true;
@@ -700,7 +700,7 @@
       }
     }
 
-    // ---- everything after a change ----
+
 
     function refresh(rebuild) {
       if (!usedFonts(app).every(fontData)) {
@@ -727,7 +727,7 @@
       schedule();
     }
 
-    // ---- adding ----
+
 
     function add(kind, at) {
       if (kind === 'picture') {
@@ -803,7 +803,7 @@
       });
     }
 
-    // ---- the board: drag, paint and the keys ----
+
 
     function paintTo(e, from, to) {
       const p = store.get(e.image), rgba = paintMode === 'erase' ? [0, 0, 0, 0] : paintColor;
@@ -933,7 +933,7 @@
       });
     }
 
-    // ---- the buttons ----
+
 
     function frameAct(change) {
       try {
@@ -985,7 +985,7 @@
       }
     })));
 
-    // an app another composer exported, its pictures under new names here so undo still finds the old ones
+
     function adopt(opened) {
       const ids = new Map();
       for (const [id, p] of opened.store) ids.set(id, addImage(store, p.name, p.width, p.height, p.rgba));
@@ -1008,7 +1008,7 @@
         .catch((error) => say([error instanceof helper.Refused ? error.line : WORDS.unreadableFile]));
     });
 
-    // ---- play: the app between the clock's turns, as the player shows it ----
+
 
     function clipFrames(text) {
       return preview.decode(hexBytes(text), inflate).then((image) => {
@@ -1077,7 +1077,7 @@
     fit();
     loadFont('nunito').then(() => refresh(true), () => say([WORDS.unreadableFile]));
 
-    // what the page tests drive and read
+
     api.page = {
       state: () => ({ app: app, store: store, frame: frame, selected: selected, playing: Boolean(playing) }),
       check: () => withFonts(checkNow) || checked,

@@ -1,4 +1,4 @@
-"""Build and call the same Lua host that runs in the firmware."""
+"""shared runtime + native python bindings"""
 import ctypes
 import hashlib
 import json

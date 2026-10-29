@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Checks a kit for what must not be public such as paths, keys, tokens, addresses, and hidden text.
-# Usage: python3 tools/check_clean.py [folder]
+
+
 
 import os
 import re
@@ -15,7 +15,7 @@ ALLOWED_NAMES = {"LICENSE", ".gitignore", "mooboard.json", "list.json", "categor
 TEXT_TYPES = {".svg", ".gpl", ".txt", ".md", ".html", ".js", ".css", ".yml", ".py", ".json", ".lua", ".c", ".cpp", ".h", ".hpp", ""}
 SKIP_DIRS = {".git"}
 
-# each pattern is written so this file passes its own check
+
 RULES = (
     ("home path", re.compile(r"/User[s]/|/hom[e]/|[A-Za-z]:\\User[s]\\|(?<![\w~])[~]/|-User[s]-")),
     ("temp path", re.compile(r"(?<![\w.])/(?:privat[e]/)?(?:tm[p]|va[r])/")),
@@ -27,7 +27,7 @@ RULES = (
     ("email address", re.compile(r"[\w.+-]{1,64}@[\w-]+(?:[.][\w-]+)*[.][A-Za-z]{2,}")),
     ("mac address", re.compile(r"\b[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}\b")),
 )
-INFLATE_MAX = 1 << 20   # the most a compressed text chunk may grow to
+INFLATE_MAX = 1 << 20
 
 
 def rules_in(text, rules=RULES):

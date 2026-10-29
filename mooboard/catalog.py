@@ -1,4 +1,4 @@
-"""Build packages for the live renderers present in board firmware."""
+"""store categories + native renderer presets"""
 import hashlib
 import json
 import os
@@ -40,7 +40,7 @@ def _manifest(app_dir):
         man = json.loads(body.decode("utf-8"), object_pairs_hook=rules._unique)
         if not isinstance(man, dict) or not all(isinstance(man.get(k), str) for k in ("name", "uses", "category")):
             raise ValueError()
-        # Apply the same whole-string check as the GIF reader, including hidden characters in values.
+
         if not package._plain(man):
             raise package.Refused(package.MANIFEST_PLAIN)
         check_category(man["category"], man["uses"])

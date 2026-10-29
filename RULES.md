@@ -19,6 +19,7 @@ Category definitions are exported from the store when the kit is built. The kit 
 - App settings and controls must describe behavior the app actually implements.
 - API-backed apps must show when data is unavailable or old. Keep credentials out of source, sample data and packages.
 - Use the board's lifecycle. A persistent lock ends only when unlocked or removed. Rotation resumes its previous state after unlocking. The board retains its night, rest and higher-priority modes.
+- Keep code comments lowercase and 3 to 8 words. Use `+` to join ideas. Avoid sentence punctuation, semicolons, colons and em dashes.
 - Include only artwork, data and code you may distribute. The runtime's bundled dependency licenses remain included.
 
 Test source edit, build, preview, settings, input, installation, operation, restart and removal before submitting.

@@ -8,18 +8,14 @@ struct lua_Debug;
 
 namespace mooboard {
 
-// Shared by the board and the local preview. The host supplies time, settings,
-// JSON feeds and input; app code owns its drawing and game or tool logic.
 class Runtime {
  public:
   static constexpr int width = 128, height = 32;
   static constexpr size_t frameBytes = width * height * 3;
   static constexpr size_t memoryLimit = 512 * 1024;
   static constexpr size_t sourceLimit = 64 * 1024;
-  // the longest string an app holds + the bytes made or copied and the bytes decoded for a unit of work
   static constexpr size_t stringLimit = 1024;
   static constexpr size_t bytesPerWork = 16, decodedPerWork = 4;
-  // the board parses each load on a stack of its own in psram, deep enough for the parser's limit
   static constexpr size_t parseStackBytes = 24 * 1024;
   Runtime();
   ~Runtime();
@@ -34,7 +30,7 @@ class Runtime {
   const uint8_t* pixels() const { return pixels_; }
   size_t memoryUsed() const { return used_; }
   bool spend(size_t work) { if(work>work_)return false;work_-=work;return true; }
-  // spend while a callback runs + false once it is over budget, and the callback ends with no more charges
+  // callback charging + stop after refusal
   bool charge(size_t work) { if(!charging_||spend(work))return true;charging_=false;return false; }
   void stopCharging() { charging_=false; }
   void overBudget() { overrun_="app exceeded its work budget"; }
@@ -58,9 +54,8 @@ class Runtime {
   std::string error_;
 };
 
-}  // namespace mooboard
+}
 
-// The Python preview calls this ABI, executing the firmware runtime itself.
 extern "C" {
 void* mb_runtime_new();
 void mb_runtime_free(void* runtime);

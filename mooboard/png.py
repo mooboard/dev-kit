@@ -135,8 +135,8 @@ def decode(data):
         raw = inflater.decompress(idat, need + 1)
     except zlib.error:
         raise Unreadable()
-    # a stream that inflates past its own rows is refused before anything decodes as a board refuses it + one zlib
-    # stream with its adler32 that ends where the data ends so nothing rides after it
+
+
     if len(raw) > need or not inflater.eof or inflater.unused_data or inflater.unconsumed_tail:
         raise Unreadable()
     top = (1 << depth) - 1

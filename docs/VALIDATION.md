@@ -1,6 +1,6 @@
 # v3 validation record
 
-Date: 2026-10-29. Status: validated ESP32-S3 release candidate, unreleased.
+Date: 2026-10-29. Version: devkit v3.0.0. Validated on ESP32-S3.
 
 ## Software and browser checks
 
@@ -15,14 +15,14 @@ Date: 2026-10-29. Status: validated ESP32-S3 release candidate, unreleased.
 
 The compatible firmware and generic validation apps were installed on an identified ESP32-S3 test board with 16 MB flash and 8 MB PSRAM.
 
-Verified installation completion; clock and ambiance selection, live RGB previews and typed settings; buttons, steppers, readouts and lists; lock and restored rotation; temporary display ownership; interruption and resume; controller input expiry; board time preferences; and checkpointed state, settings, selections and locking after restart.
+Verified installation completion, clock and ambiance selection, live RGB previews and typed settings. Buttons, steppers, readouts, lists, lock and restored rotation passed. Temporary display ownership, interruption and resume, controller input expiry, board time preferences, and checkpointed state, settings, selections and locking after restart passed.
 
-A real HTTPS service received a synthetic local credential header. Success, failed requests with retained last-good data, settings substitutions and recovery passed. Credentials stayed out of packages and settings responses. Offline feed behavior is covered by native tests; the board's Wi-Fi was not deliberately disconnected.
+A real HTTPS service received a synthetic local credential header. Success, failed requests with retained last-good data, settings substitutions and recovery passed. Credentials stayed out of packages and settings responses. Offline feed behavior is covered by native tests. The board's Wi-Fi was not deliberately disconnected.
 
 Deep callback stress rendered successfully, a callback beyond the stack limit was refused, and the board recovered. A composer picture package rendered through the normal rotation. Validation apps were removed through the board API.
 
-Device testing corrected empty-list handling, last-good feed retention after setting changes, and internal-memory pressure during HTTPS activity. TLS allocations use available external RAM while retaining certificate verification. UART logs and status records include heap, frame timings and task-stack margins. Frame timings include startup and I/O transients; the runtime does not promise a hard frame deadline.
+Device testing corrected empty-list handling, last-good feed retention after setting changes, and internal-memory pressure during HTTPS activity. TLS allocations use available external RAM while retaining certificate verification. UART logs and status records include heap, frame timings and task-stack margins. Frame timings include startup and I/O transients. The runtime does not promise a hard frame deadline.
 
-## Remaining release review
+## Hardware limits
 
-The test board has no attached panel. Framebuffer rendering is verified; physical LED appearance is not. This firmware checkout has no P4 build target, so P4 compilation and device behavior remain unverified. Final review and publication are separate steps. No public release, tag or branch push was performed.
+The test board has no attached panel. Framebuffer rendering is verified. Physical LED appearance is not. This firmware checkout has no P4 build target, so P4 compilation and device behavior remain unverified. These limits apply to the tested hardware scope.

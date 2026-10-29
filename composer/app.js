@@ -1,4 +1,4 @@
-/* an app as the composer holds it: its elements, frames and settings, its folder and package, and the build's rules */
+
 (function (root) {
   'use strict';
 
@@ -77,7 +77,7 @@
     authorMissing: 'GitHub username not found.',
   };
 
-  // ---- the composition ----
+
 
   function slug(text) {
     const base = String(text).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
@@ -91,7 +91,7 @@
              layers: [], frames: [{ ms: FRAME_MS, elements: [] }], next: 0 };
   }
 
-  // a place left out or None, as the helper reads x, y and a ticker's y
+
   const blank = (v) => v === null || v === undefined;
   const clampX = (v) => Math.min(W - 1, Math.max(0, Math.trunc(v)));
   const clampY = (v) => Math.min(H - 1, Math.max(0, Math.trunc(v)));
@@ -100,7 +100,7 @@
     return Math.floor(H / 2) + Math.floor(size / 2);
   }
 
-  // the ink's width and its top and bottom from the baseline, or null when nothing has ink
+
   function measure(kit, words, size, font) {
     if (!helper.SIZES.includes(size) || !helper.FONTS.includes(font)) return null;
     const face = kit.atlas(font, size);
@@ -144,7 +144,7 @@
     return at ? placeAt(e, at, kit, options.store) : e;
   }
 
-  // an element centered on a led, as when it is dropped there
+
   function placeAt(element, at, kit, store, now) {
     const e = element;
     if (e.type === 'line') {
@@ -176,7 +176,7 @@
     return at;
   }
 
-  // one step up or down, with a ticker kept above the rest because it draws last
+
   function moveElement(list, index, delta) {
     const to = index + delta;
     if (to < 0 || to >= list.length || (list[to].type === 'scroll') !== (list[index].type === 'scroll')) return -1;
@@ -201,7 +201,7 @@
     return { ArrowLeft: [-s, 0], ArrowRight: [s, 0], ArrowUp: [0, -s], ArrowDown: [0, s] }[key] || null;
   }
 
-  // where screen.text puts a text and the size it takes, measured at its own size when it fits nowhere
+
   function placeText(element, kit, now, values) {
     const words = wordsOf(element, now, values);
     const args = { words: words, x: element.x, y: element.y, size: element.size, font: element.font, align: element.align };
@@ -278,7 +278,7 @@
     return null;
   }
 
-  // ---- frames ----
+
 
   function addFrame(app, at) {
     if (app.frames.length >= helper.MAX_FRAMES) throw new Error(helper.WORDS.frames);
@@ -312,7 +312,7 @@
     return Number.isFinite(ms) ? Math.max(SHORTEST_MS, ms) : SHORTEST_MS;
   }
 
-  // ---- undo and redo ----
+
 
   class History {
     constructor(limit) {
@@ -340,7 +340,7 @@
     }
   }
 
-  // ---- pictures ----
+
 
   function addImage(store, name, width, height, rgba) {
     const id = 'i' + (store.size + 1);
@@ -348,14 +348,14 @@
     return id;
   }
 
-  // a fully clear pixel is clear black so the same picture is the same bytes
+
   function cleared(rgba) {
     const out = Uint8Array.from(rgba);
     for (let i = 0; i < out.length; i += 4) if (out[i + 3] === 0) out.fill(0, i, i + 4);
     return out;
   }
 
-  // painting makes a new picture so undo still has the old one
+
   function paint(store, element, points, rgba) {
     const p = store.get(element.image), out = Uint8Array.from(p.rgba);
     for (const [x, y] of points) if (x >= 0 && y >= 0 && x < p.width && y < p.height) out.set(rgba, (y * p.width + x) * 4);
@@ -372,7 +372,7 @@
     return element;
   }
 
-  // ---- settings, and the elements tied to them that draw on every frame ----
+
 
   function keyOf(label) {
     const base = String(label).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
@@ -413,7 +413,7 @@
     return Array.from(e.words.matchAll(/\{([^{}]*)\}/g)).some((m) => keys.has(m[1])) || /^\{[^{}]*\}$/.test(e.color);
   }
 
-  // an element tied to a setting is a layer on every frame and goes back to its frame when untied
+
   function relocate(app, frame, found) {
     const wants = tied(app, found.element);
     if (wants === found.layer) return;
@@ -487,7 +487,7 @@
     for (const e of app.layers.slice()) relocate(app, frame, findElement(app, frame, e.uid));
   }
 
-  // ---- the app folder: mooboard.json, app.py and its pictures ----
+
 
   function usedFonts(app) {
     const out = new Set(['nunito']);
@@ -506,7 +506,7 @@
       'picture';
   }
 
-  // each picture's path in the folder, where a tied sprite keeps its name so the composer knows it again
+
   function exportNames(app, store) {
     const taken = new Set(), images = new Map(), sprites = new Map();
     const claim = (base) => {
@@ -543,7 +543,7 @@
     return out;
   }
 
-  // + its category since sdk v3.0 when it has one
+
   function fieldsOf(app) {
     const out = { mooboard: 1, id: app.id, name: app.name, author: app.author, refresh: app.refresh, duration: app.duration };
     if (app.category) out.category = app.category;
@@ -557,11 +557,11 @@
     return m;
   }
 
-  // what each call cannot do without, as the helper's own signatures and compose
+
   const NEEDS = { text: ['words'], time: ['shows', 'hours'], scroll: ['words'], sprite: ['name', 'x', 'y'],
                   image: ['path', 'x', 'y'], rect: ['x', 'y', 'w', 'h', 'color'], line: ['x0', 'y0', 'x1', 'y1', 'color'] };
 
-  // what the page reads as whole numbers, which must be ones it can hold exactly as python does
+
   const NUMBERS = ['x', 'y', 'w', 'h', 'x0', 'y0', 'x1', 'y1', 'size', 'hours'];
 
   const CALL_KEYS = {
@@ -574,7 +574,7 @@
     line: ['type', 'x0', 'y0', 'x1', 'y1', 'color'],
   };
 
-  // an element as the helper call app.py makes, with a key an edited app left out still left out
+
   function callOf(e, names) {
     const out = {};
     for (const key of CALL_KEYS[e.type]) {
@@ -610,7 +610,7 @@
 
   const utf8 = (text) => new TextEncoder().encode(text);
 
-  // the png of every picture in images/ with its pixels
+
   function picturesOf(app, store, kit, names) {
     const out = {};
     for (const [name, path] of names.sprites) {
@@ -633,12 +633,12 @@
     return files;
   }
 
-  // the folder is named after the id as a slug, so an id from an opened file can never be a path
+
   function exportZip(app, store, kit) {
     return helper.writeZip(appFiles(app, store, kit).map(([name, data]) => [slug(app.id) + '/' + name, data]));
   }
 
-  // ---- opening an exported app again ----
+
 
   function skip(text, at) {
     for (;;) {
@@ -674,7 +674,7 @@
     return [out, at + 1];
   }
 
-  // one python literal from at: lists dicts strings whole numbers True False and None
+
   function valueAt(text, at) {
     at = skip(text, at);
     const c = text[at];
@@ -717,7 +717,7 @@
     return found ? valueAt(source, found.index + found[0].length)[0] : null;
   }
 
-  // the files open reads from a zip, each with the most it may hold: the app folder's mooboard.json, app.py and pictures
+
   function appEntries(entries) {
     const found = entries.filter((e) => /(^|\/)mooboard\.json$/.test(e.name)).sort((a, b) => a.name.length - b.name.length)[0];
     if (!found) return [];
@@ -732,7 +732,7 @@
     return out;
   }
 
-  // zlib or raw deflate bytes fed to the browser's inflater a slice at a time, so it stops one byte past limit
+
   async function inflate(data, format, limit) {
     const stream = new DecompressionStream(format || 'deflate');
     const writer = stream.writable.getWriter(), reader = stream.readable.getReader();
@@ -766,7 +766,7 @@
     return out;
   }
 
-  // the app folder's own files, one at a time, none past its cap and all together not past the open cap
+
   async function unzip(bytes) {
     const out = [];
     let total = 0;
@@ -785,7 +785,7 @@
     return a.width === b.width && a.height === b.height && a.rgba.every((v, i) => v === b.rgba[i]);
   }
 
-  // opens the zip the composer exports, with decode turning a png into its pixels
+
   async function readApp(entries, decode, kit) {
     const found = entries.filter((e) => /(^|\/)mooboard\.json$/.test(e.name)).sort((a, b) => a.name.length - b.name.length)[0];
     if (!found) throw new helper.Refused(helper.fill(WORDS.unreadable, { name: 'mooboard.json' }));
@@ -811,7 +811,7 @@
       const p = await decode(data);
       byPath.set(name, addImage(store, name.slice(7, -4), p.width, p.height, cleared(p.rgba)));
     }
-    // the settings and layers as the build reads them, so the page never holds what it cannot draw
+
     const settings = helper.checkSettings(manifest.settings === undefined ? [] : manifest.settings);
     helper.checkLayers(manifest.layers === undefined ? [] : manifest.layers, settings, new Set(byPath.keys()));
     const app = newApp();
@@ -855,9 +855,9 @@
     return { app: app, store: store };
   }
 
-  // ---- drawing, and the build's rules ----
 
-  // the kit with the app's pictures found by their path in the folder
+
+
   function kitFor(kit, store, names) {
     const byPath = new Map();
     for (const [id, path] of names.images) byPath.set(path, store.get(id));
@@ -876,7 +876,7 @@
     return out;
   }
 
-  // a ticker's line from its start, clipped to the safe area, as the board shows it on its way across
+
   function tickerStart(screen, e, kit) {
     if (!helper.SIZES.includes(e.size) || !helper.FONTS.includes(e.font)) return;
     const face = kit.atlas(e.font, e.size), spans = helper.layout(face, e.words)[0], box = helper.ink(face, spans);
@@ -888,7 +888,7 @@
     screen.canvas.clip = [0, 0, W - 1, H - 1];
   }
 
-  // one frame of the strip as the board shows it, with the layers at their defaults on top
+
   function frameView(app, store, kit, index, now) {
     const names = exportNames(app, store), all = kitFor(kit, store, names), screen = new helper.Screen(all);
     for (const e of app.frames[index].elements) {
@@ -915,13 +915,13 @@
     }
   }
 
-  // the build's line for an author alone
+
   function authorRefusal(author) {
     return refusal(() => helper.checkManifest(Object.assign({}, STAND_IN, { author: author }), {}));
   }
 
-  // github's users as the author box asks after them: found on a 200, missing on a 404, and unknown on anything else
-  // or after a wait + found and missing are kept by the name in any case and unknown is asked again next time
+
+
   class GitHubUsers {
     constructor(fetcher, waitMs) {
       this.fetcher = fetcher;
@@ -957,13 +957,13 @@
     }
   }
 
-  // the author box's red line: a name the build's rule refuses or one github answered 404 for, never an empty one
+
   function authorMissing(author, users) {
     if (author === '') return false;
     return authorRefusal(author) !== null || users.known(author) === 'missing';
   }
 
-  // the build's lines for the app's fields, its settings and its screens + the author's apart, for its own box
+
   function check(app, store, kit, now) {
     const out = { app: null, author: null, settings: null, screen: [], warnings: [], frames: 0, ok: false };
     out.app = refusal(() => helper.checkManifest(Object.assign(fieldsOf(app), { author: STAND_IN.author }), { kit: kit }));

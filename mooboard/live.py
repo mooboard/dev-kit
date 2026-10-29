@@ -1,4 +1,4 @@
-"""Custom live apps: source, typed settings, data feeds and deterministic packages."""
+"""custom apps + deterministic package builds"""
 import hashlib
 import http.cookiejar
 import json
@@ -147,7 +147,7 @@ def canonical(man):
 
 
 def zip_bytes(entries):
-    # Same strict stored-ZIP container as the firmware's format 1 and 2 readers.
+
     local, central = bytearray(), bytearray()
     for name, body in entries:
         encoded = name.encode("ascii")

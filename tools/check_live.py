@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build every live starter twice and check package integrity using Python's independent ZIP reader."""
+"""repeatable builds + independent zip integrity checks"""
 import hashlib
 import json
 import os

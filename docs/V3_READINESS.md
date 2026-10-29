@@ -1,18 +1,9 @@
-# v3 validation and release status
+# v3 compatibility and validation
 
-This v3 release candidate has passed software, browser and ESP32-S3 board validation. It is not published. Physical panel appearance and P4 hardware are not verified.
+Devkit v3.0.0 is ready to create, build and preview apps in Lifestyle, Ambiance, Clock Faces, Games, Tools and AI. Local authoring needs no board.
 
-The kit and compatible firmware must pass these checks together:
+Custom Lua app installation requires firmware with the v3 runtime and Developer mode enabled. The installer checks the board's runtime capability. Existing firmware without that capability needs a compatible firmware update before it can run format 3 apps. Installing an app does not update firmware.
 
-- Categories exactly match the store export, including original preset categories.
-- A developer writes new app logic, builds it and previews that same code locally.
-- Clock and Ambiance apps install into their pickers with working previews and settings.
-- Regular apps expose settings, controls, rotation, locking and open/close behavior.
-- API feeds update asynchronously and preserve useful last-good data when a request fails.
-- Credentials remain outside packages and app code.
-- State survives display turns and restart. Disconnect releases held controls.
-- Source edit, build, preview, install, operation, restart and removal pass on a board.
-- Existing picture/GIF apps and the composer keep working.
-- Runtime, package, integration, browser and firmware checks pass, followed by final review.
+Clock Faces and Ambiance apps appear in their pickers with live previews and settings. Other apps support settings, controls, rotation, locking and temporary display ownership. Picture/GIF apps and native renderer presets remain supported.
 
-See [the validation record](VALIDATION.md) for measured results and remaining checks. Building a package alone is not proof of board behavior.
+Software, desktop/phone browser and ESP32-S3 board workflows passed validation. The test board had no attached panel, so physical LED appearance was not inspected. P4 compilation and device behavior remain unverified. See [the validation record](VALIDATION.md) for the tested scope.

@@ -4,8 +4,8 @@ from mooboard import Screen, colors
 
 DAYS = "MON TUE WED THU FRI SAT SUN".split()
 
-# The time and date come from when the app is built. GitHub builds it in UTC.
-# A GIF snapshot example. Use the custom clock template for a live face in Clock with settings.
+
+
 now = datetime.datetime.now()
 screen = Screen()
 screen.text("%d:%02d" % ((now.hour + 11) % 12 + 1, now.minute), x=44, y=19, size=13, color=colors.WHITE)

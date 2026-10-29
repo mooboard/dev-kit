@@ -1,4 +1,4 @@
-"""Local live preview backed by the firmware's native runtime."""
+"""local preview + shared native runtime"""
 import base64
 import datetime
 import http.server
